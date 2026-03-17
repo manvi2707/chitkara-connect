@@ -1,0 +1,63 @@
+# =============================================
+# .gitignore — Files to NEVER upload to GitHub
+# =============================================
+# Git will completely ignore everything listed here.
+# This protects your passwords and keeps repo clean.
+
+# ── Environment Variables ────────────────────
+# These contain your MongoDB password and JWT secret
+# NEVER upload these to GitHub
+.env
+*.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ── Node Modules ─────────────────────────────
+# These folders are huge (100MB+)
+# Anyone can recreate them with: npm install
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# ── React Build Output ───────────────────────
+# Generated when you run: npm run build
+# Not needed in the repo
+client/build/
+client/.cache/
+
+# ── Logs ─────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── OS Generated Files ───────────────────────
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ── Editor Folders ───────────────────────────
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ── Misc ─────────────────────────────────────
+.npm
+.eslintcache
+coverage/
+*.pem

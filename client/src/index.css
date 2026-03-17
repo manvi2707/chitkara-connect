@@ -1,0 +1,47 @@
+/* =============================================
+   index.css — Global Styles
+   =============================================
+   These 3 Tailwind lines are required.
+   They inject all of Tailwind's utility classes
+   into your app automatically.
+   ============================================= */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Global font & box sizing ─────────────── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9fafb;  /* very light gray background */
+  color: #111827;              /* dark gray default text */
+}
+
+/* ── Smooth scrolling everywhere ─────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ── Scrollbar styling (optional but nice) ── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0a0a0;
+}
