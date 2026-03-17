@@ -410,13 +410,13 @@ with attribution to the original author.
 
 ## 👨‍💻 Author
 
-**Your Name Here**
+**Manvi**
 
 - 🎓 B.E. Computer Science & Engineering
 - 🏫 Chitkara University, Punjab
-- 📅 Final Year Project — 2025
-- 💻 GitHub: [@yourusername](https://github.com/yourusername)
-- 📧 Email: your@email.com
+- 📅 Final Project
+- 💻 GitHub: [@manvi2707](https://github.com/manvi2707)
+- 📧 Email: manvigarg2707@gmail.com
 
 ---
 
