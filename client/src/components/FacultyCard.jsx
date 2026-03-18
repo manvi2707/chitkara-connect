@@ -1,34 +1,29 @@
 // =============================================
-// FacultyCard.jsx — Single faculty info card
-// Used in FacultyDirectory page
-// Shows faculty details + Book Meeting button
+// components/FacultyCard.jsx — With Real Photo
 // =============================================
 
 import { useState } from "react";
+import UserAvatar from "./UserAvatar";
 import BookMeetingModal from "./BookMeetingModal";
 
 const FacultyCard = ({ faculty }) => {
-  // Controls whether the Book Meeting popup is open
   const [showModal, setShowModal] = useState(false);
 
   return (
     <>
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition">
-        
+
         {/* Top section — avatar + name + department */}
         <div className="flex items-center gap-4 mb-4">
-          {faculty.profilePhoto ? (
-            <img
-              src={faculty.profilePhoto}
-              alt={faculty.name}
-              className="w-14 h-14 rounded-full object-cover"
-            />
-          ) : (
-            // Default avatar if no photo uploaded
-            <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-2xl font-bold text-blue-700">
-              {faculty.name.charAt(0)}
-            </div>
-          )}
+          {/* UserAvatar shows real photo or initials */}
+          <UserAvatar
+            name={faculty.name}
+            photo={faculty.profilePhoto}
+            role="faculty"
+            size="lg"
+            shape="rounded"
+            className="border-2 border-gray-100 shadow-sm flex-shrink-0"
+          />
 
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-gray-800 truncate">{faculty.name}</h3>
@@ -48,10 +43,8 @@ const FacultyCard = ({ faculty }) => {
         {faculty.expertise?.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
             {faculty.expertise.map((skill) => (
-              <span
-                key={skill}
-                className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full"
-              >
+              <span key={skill}
+                className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
                 {skill}
               </span>
             ))}
@@ -75,19 +68,16 @@ const FacultyCard = ({ faculty }) => {
           </p>
         </div>
 
-        {/* Availability badge + Book button */}
+        {/* Availability + Book button */}
         <div className="flex items-center justify-between">
-          <span
-            className={`text-xs px-2 py-1 rounded-full font-medium ${
-              faculty.isAvailable
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-600"
-            }`}
-          >
+          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+            faculty.isAvailable
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-600"
+          }`}>
             {faculty.isAvailable ? "✅ Available" : "❌ Unavailable"}
           </span>
 
-          {/* Only show button if faculty is available */}
           {faculty.isAvailable && (
             <button
               onClick={() => setShowModal(true)}
@@ -99,7 +89,6 @@ const FacultyCard = ({ faculty }) => {
         </div>
       </div>
 
-      {/* Book Meeting Popup */}
       {showModal && (
         <BookMeetingModal
           faculty={faculty}

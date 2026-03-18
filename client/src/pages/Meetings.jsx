@@ -1,7 +1,5 @@
 // =============================================
-// Meetings.jsx — Meetings page
-// role="student" → shows student's own requests
-// role="faculty" → shows requests sent to faculty
+// pages/Meetings.jsx — Mobile Fixed
 // =============================================
 
 import { useState, useEffect } from "react";
@@ -12,9 +10,7 @@ const Meetings = ({ role }) => {
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [filter, setFilter]     = useState("all");
-  // filter options: "all", "pending", "accepted", "rejected"
 
-  // Fetch meetings based on role
   const fetchMeetings = async () => {
     setLoading(true);
     try {
@@ -29,16 +25,12 @@ const Meetings = ({ role }) => {
     }
   };
 
-  useEffect(() => {
-    fetchMeetings();
-  }, [role]);
+  useEffect(() => { fetchMeetings(); }, [role]);
 
-  // Filter meetings by status
   const filtered = filter === "all"
     ? meetings
     : meetings.filter((m) => m.status === filter);
 
-  // Count by status for the tab badges
   const counts = {
     all:      meetings.length,
     pending:  meetings.filter((m) => m.status === "pending").length,
@@ -47,27 +39,27 @@ const Meetings = ({ role }) => {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6 w-full overflow-x-hidden">
 
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">
-          {role === "student" ? "My Meeting Requests" : "Student Meeting Requests"}
+      <div className="mb-5">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+          {role === "student" ? "My Meetings" : "Meeting Requests"}
         </h1>
         <p className="text-gray-500 text-sm mt-1">
           {role === "student"
-            ? "Track all your meeting requests with faculty"
-            : "Review and respond to student meeting requests"}
+            ? "Track all your meeting requests"
+            : "Review and respond to requests"}
         </p>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-2 mb-6 flex-wrap">
+      {/* Filter tabs — scrollable on mobile */}
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1 scrollbar-hide">
         {["all", "pending", "accepted", "rejected"].map((status) => (
           <button
             key={status}
             onClick={() => setFilter(status)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
+            className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
               filter === status
                 ? "bg-blue-700 text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -78,7 +70,6 @@ const Meetings = ({ role }) => {
             {status === "rejected" && "❌"}
             {status === "all"      && "📋"}
             <span className="capitalize">{status}</span>
-            {/* Badge with count */}
             {counts[status] > 0 && (
               <span className={`text-xs px-1.5 py-0.5 rounded-full ${
                 filter === status ? "bg-white/20" : "bg-gray-300"
@@ -90,26 +81,24 @@ const Meetings = ({ role }) => {
         ))}
       </div>
 
-      {/* Loading state */}
+      {/* Content */}
       {loading ? (
         <div className="text-center py-16">
           <div className="text-4xl mb-3 animate-bounce">📅</div>
           <p className="text-gray-500">Loading meetings...</p>
         </div>
       ) : filtered.length > 0 ? (
-        // Meeting cards
         <div className="space-y-4">
           {filtered.map((meeting) => (
             <MeetingCard
               key={meeting._id}
               meeting={meeting}
               role={role}
-              onStatusChange={fetchMeetings} // refresh list after faculty responds
+              onStatusChange={fetchMeetings}
             />
           ))}
         </div>
       ) : (
-        // Empty state
         <div className="text-center py-16">
           <div className="text-5xl mb-3">📭</div>
           <p className="text-gray-500 font-medium">

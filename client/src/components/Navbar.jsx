@@ -1,14 +1,15 @@
 // =============================================
-// Navbar.jsx — Fixed Navbar with Better Contrast
+// components/Navbar.jsx — With Global Photo
 // =============================================
 
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "./Toast";
+import UserAvatar from "./UserAvatar";
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, profilePhoto, logout } = useAuth(); // ← profilePhoto from context
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
@@ -34,11 +35,9 @@ const Navbar = () => {
 
           {/* ── Logo ── */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            {/* Logo icon — always visible and distinct */}
             <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 flex-shrink-0">
               <span className="text-white font-black text-base">C</span>
             </div>
-            {/* Brand name — always white on home, always dark on other pages */}
             <span className={`font-black text-lg tracking-tight transition ${
               isHome ? "text-white" : "text-gray-900"
             }`}>
@@ -53,18 +52,20 @@ const Navbar = () => {
           <div className="hidden sm:flex items-center gap-2">
             {user ? (
               <>
-                {/* User info pill */}
-                <div className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm ${
+                {/* User pill with REAL photo */}
+                <div className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-sm ${
                   isHome
                     ? "bg-white/10 text-white border border-white/20"
                     : "bg-gray-100 text-gray-800 border border-gray-200"
                 }`}>
-                  {/* Avatar */}
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black flex-shrink-0 ${
-                    user.role === "student" ? "bg-blue-600" : "bg-emerald-600"
-                  }`}>
-                    {user.name?.charAt(0).toUpperCase()}
-                  </div>
+                  {/* UserAvatar uses global profilePhoto */}
+                  <UserAvatar
+                    name={user.name}
+                    photo={profilePhoto}
+                    role={user.role}
+                    size="sm"
+                    shape="rounded"
+                  />
                   <span className="font-semibold max-w-28 truncate">
                     {user.name}
                   </span>
@@ -141,19 +142,21 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* ── Mobile dropdown menu ── */}
+      {/* ── Mobile dropdown ── */}
       {menuOpen && (
         <div className="sm:hidden bg-white border-t border-gray-100 shadow-lg">
           <div className="px-4 py-3 space-y-2">
             {user ? (
               <>
-                {/* User info card */}
                 <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0 ${
-                    user.role === "student" ? "bg-blue-600" : "bg-emerald-600"
-                  }`}>
-                    {user.name?.charAt(0).toUpperCase()}
-                  </div>
+                  {/* Real photo in mobile menu too */}
+                  <UserAvatar
+                    name={user.name}
+                    photo={profilePhoto}
+                    role={user.role}
+                    size="md"
+                    shape="rounded"
+                  />
                   <div className="min-w-0">
                     <p className="font-bold text-sm text-gray-900 truncate">{user.name}</p>
                     <p className="text-xs text-gray-500 capitalize">
@@ -162,7 +165,6 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                {/* Dashboard */}
                 <Link
                   to={user.role === "student" ? "/student/dashboard" : "/faculty/dashboard"}
                   onClick={() => setMenuOpen(false)}
@@ -171,7 +173,6 @@ const Navbar = () => {
                   <span>📊</span> Dashboard
                 </Link>
 
-                {/* Logout */}
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-xl transition"
@@ -181,17 +182,13 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                <Link
-                  to="/login/student"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-xl transition border border-gray-200"
+                <Link to="/login/student" onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-xl border border-gray-200"
                 >
                   <span>🎓</span> Student Login
                 </Link>
-                <Link
-                  to="/login/faculty"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition"
+                <Link to="/login/faculty" onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl"
                 >
                   <span>👨‍🏫</span> Faculty Login
                 </Link>

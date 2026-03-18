@@ -1,45 +1,35 @@
 // =============================================
-// server.js — Main Entry Point for the Backend
+// server.js — Updated with Upload Routes
 // =============================================
-// This file starts the Express server, connects to MongoDB,
-// and registers all the API routes.
 
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
 
-// Load environment variables from .env file
 dotenv.config();
 
-// Import all route files
-const authRoutes = require("./routes/authRoutes");
+const authRoutes    = require("./routes/authRoutes");
 const facultyRoutes = require("./routes/facultyRoutes");
 const meetingRoutes = require("./routes/meetingRoutes");
 const messageRoutes = require("./routes/messageRoutes");
+const uploadRoutes  = require("./routes/uploadRoutes"); // ← NEW
 
-// Create the Express app
 const app = express();
 
-// ── Middleware ──────────────────────────────
-// Allow requests from the React frontend
 app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:3000" }));
-
-// Parse incoming JSON request bodies
 app.use(express.json());
 
-// ── Routes ──────────────────────────────────
-app.use("/api/auth", authRoutes);
-app.use("/api/faculty", facultyRoutes);
+app.use("/api/auth",     authRoutes);
+app.use("/api/faculty",  facultyRoutes);
 app.use("/api/meetings", meetingRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/upload",   uploadRoutes); // ← NEW
 
-// A simple test route to check if the server is running
 app.get("/", (req, res) => {
   res.json({ message: "ChitkaraConnect API is running! 🚀" });
 });
 
-// ── Connect to MongoDB and Start Server ─────
 const PORT = process.env.PORT || 5000;
 
 mongoose

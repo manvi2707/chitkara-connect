@@ -1,5 +1,5 @@
 // =============================================
-// FacultyDashboard.jsx — Faculty main layout
+// pages/FacultyDashboard.jsx — Mobile Responsive
 // =============================================
 
 import { useState } from "react";
@@ -8,11 +8,10 @@ import FacultyProfileEdit from "./FacultyProfileEdit";
 import Meetings from "./Meetings";
 import Messages from "./Messages";
 
-// Tab definitions for faculty sidebar
 const TABS = [
-  { id: "profile",   label: "👤 My Profile" },
-  { id: "meetings",  label: "📅 Meeting Requests" },
-  { id: "messages",  label: "✉️ Messages" },
+  { id: "profile",  label: "👤 My Profile",         shortLabel: "Profile" },
+  { id: "meetings", label: "📅 Meeting Requests",    shortLabel: "Meetings" },
+  { id: "messages", label: "✉️ Messages",             shortLabel: "Messages" },
 ];
 
 const FacultyDashboard = () => {
@@ -29,13 +28,19 @@ const FacultyDashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
+
+      {/* Sidebar — desktop only */}
       <Sidebar
         tabs={TABS}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
+
+      {/* Main content */}
       <main className="flex-1 overflow-y-auto">
+        <div className="md:hidden h-14" /> {/* spacer for mobile top bar */}
         {renderContent()}
+        <div className="md:hidden h-20" /> {/* spacer for mobile bottom tabs */}
       </main>
     </div>
   );
