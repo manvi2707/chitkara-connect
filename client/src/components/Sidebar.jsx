@@ -1,58 +1,84 @@
 // =============================================
-// Sidebar.jsx — Reusable sidebar navigation
-// Used by both StudentDashboard and FacultyDashboard
+// Sidebar.jsx — New Beautiful Sidebar
 // =============================================
+// Replaces old Sidebar.jsx completely
+// Has better styling, avatar, active states
 
 import { useAuth } from "../context/AuthContext";
 
 const Sidebar = ({ tabs, activeTab, setActiveTab }) => {
   const { user } = useAuth();
-
-  // Color theme changes based on role
   const isStudent = user?.role === "student";
-  const bgColor   = isStudent ? "bg-blue-900"  : "bg-green-900";
-  const textMuted = isStudent ? "text-blue-300" : "text-green-300";
-  const activeStyle = isStudent
-    ? "bg-white text-blue-900"
-    : "bg-white text-green-900";
-  const hoverStyle = isStudent
-    ? "hover:bg-blue-800 text-blue-100"
-    : "hover:bg-green-800 text-green-100";
 
   return (
-    <aside className={`w-60 min-h-screen ${bgColor} text-white flex flex-col p-4`}>
-      
-      {/* User info at top of sidebar */}
-      <div className="mb-8">
-        {/* Avatar circle with first letter of name */}
-        <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-xl font-bold mb-3">
-          {user?.name?.charAt(0).toUpperCase()}
+    <aside className={`w-64 min-h-screen flex flex-col ${
+      isStudent
+        ? "bg-gradient-to-b from-blue-900 to-blue-950"
+        : "bg-gradient-to-b from-emerald-900 to-emerald-950"
+    } text-white`}>
+
+      {/* ── User profile section ── */}
+      <div className="p-5 border-b border-white/10">
+        {/* Avatar */}
+        <div className="flex items-center gap-3 mb-1">
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg font-black shadow-lg ${
+            isStudent ? "bg-blue-500" : "bg-emerald-500"
+          }`}>
+            {user?.name?.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <p className="font-bold text-sm truncate">{user?.name}</p>
+            <p className="text-xs text-white/50 truncate">{user?.email}</p>
+          </div>
         </div>
-        <p className={`${textMuted} text-xs mb-0.5`}>Logged in as</p>
-        <p className="font-semibold text-sm truncate">{user?.name}</p>
-        <p className={`${textMuted} text-xs capitalize`}>
-          {user?.department} · {user?.role}
-        </p>
+
+        {/* Role + department badges */}
+        <div className="flex gap-2 mt-3">
+          <span className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${
+            isStudent
+              ? "bg-blue-500/30 text-blue-200"
+              : "bg-emerald-500/30 text-emerald-200"
+          }`}>
+            {user?.role}
+          </span>
+          <span className="text-xs px-2 py-1 rounded-full font-medium bg-white/10 text-white/70">
+            {user?.department}
+          </span>
+        </div>
       </div>
 
-      {/* Tab navigation buttons */}
-      <nav className="space-y-1 flex-1">
+      {/* ── Navigation tabs ── */}
+      <nav className="flex-1 p-3 space-y-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition ${
-              activeTab === tab.id ? activeStyle : hoverStyle
+            className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-3 ${
+              activeTab === tab.id
+                ? "bg-white text-gray-900 shadow-lg shadow-black/20"
+                : "text-white/70 hover:text-white hover:bg-white/10"
             }`}
           >
-            {tab.label}
+            {/* Icon — first character of label */}
+            <span className="text-base">{tab.label.split(" ")[0]}</span>
+            {/* Label — rest of the text */}
+            <span>{tab.label.split(" ").slice(1).join(" ")}</span>
+
+            {/* Active indicator dot */}
+            {activeTab === tab.id && (
+              <span className={`ml-auto w-1.5 h-1.5 rounded-full ${
+                isStudent ? "bg-blue-500" : "bg-emerald-500"
+              }`} />
+            )}
           </button>
         ))}
       </nav>
 
-      {/* Footer at bottom of sidebar */}
-      <div className={`${textMuted} text-xs mt-8 text-center`}>
-        ChitkaraConnect v1.0
+      {/* ── Footer ── */}
+      <div className="p-4 border-t border-white/10">
+        <p className="text-xs text-white/30 text-center">
+          ChitkaraConnect v2.0
+        </p>
       </div>
     </aside>
   );

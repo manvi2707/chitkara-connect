@@ -1,141 +1,102 @@
 // =============================================
-// FacultyProfileEdit.jsx — Faculty updates profile
+// FacultyProfileEdit.jsx — Updated with toast
 // =============================================
 
 import { useState, useEffect } from "react";
 import { updateFacultyProfile, getFacultyById } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../components/Toast";
+import { ProfileSkeleton } from "../components/LoadingSkeleton";
 
 const FacultyProfileEdit = () => {
   const { user } = useAuth();
+  const toast = useToast();
 
   const [loading, setLoading]   = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [success, setSuccess]   = useState(false);
-  const [error, setError]       = useState("");
 
-  // Form state matches Faculty model fields
   const [formData, setFormData] = useState({
-    bio:           "",
-    officeAddress: "",
-    visitingHours: "",
-    expertise:     "",   // stored as comma-separated string, split before saving
-    phone:         "",
-    designation:   "",
-    isAvailable:   true,
+    bio: "", officeAddress: "", visitingHours: "",
+    expertise: "", phone: "", designation: "", isAvailable: true,
   });
 
-  // Load existing profile data when page opens
+  // Load existing profile
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const res = await getFacultyById(user.id);
+        const res = await getFacultyById(user.id || user._id);
         const f = res.data;
         setFormData({
           bio:           f.bio           || "",
           officeAddress: f.officeAddress || "",
           visitingHours: f.visitingHours || "",
-          expertise:     f.expertise?.join(", ") || "", // array → "ML, React, Node"
+          expertise:     f.expertise?.join(", ") || "",
           phone:         f.phone         || "",
-          designation:   f.designation   || "",
+          designation:   f.designation   || "Assistant Professor",
           isAvailable:   f.isAvailable   ?? true,
         });
       } catch (err) {
-        console.error("Could not load profile:", err);
+        toast.error("Load failed", "Could not load your profile.");
       } finally {
         setFetching(false);
       }
     };
     loadProfile();
-  }, [user.id]);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
+    setFormData({ ...formData, [name]: type === "checkbox" ? checked : value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setSuccess(false);
-    setError("");
 
     try {
-      // Convert expertise string to array before sending
-      // "Machine Learning, React, Node.js" → ["Machine Learning", "React", "Node.js"]
       const dataToSend = {
         ...formData,
         expertise: formData.expertise
-          .split(",")
-          .map((s) => s.trim())
-          .filter((s) => s !== ""), // remove empty strings
+          .split(",").map((s) => s.trim()).filter(Boolean),
       };
-
       await updateFacultyProfile(dataToSend);
-      setSuccess(true);
-
-      // Hide success message after 3 seconds
-      setTimeout(() => setSuccess(false), 3000);
+      toast.success("Profile saved!", "Your profile has been updated.");
     } catch (err) {
-      setError(err.response?.data?.message || "Could not update profile.");
+      toast.error("Save failed", err.response?.data?.message || "Could not update profile.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (fetching) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="text-4xl mb-3 animate-bounce">👤</div>
-          <p className="text-gray-500">Loading your profile...</p>
-        </div>
-      </div>
-    );
-  }
+  if (fetching) return <ProfileSkeleton />;
+
+  // Expertise preview tags
+  const expertiseTags = formData.expertise
+    .split(",").map((s) => s.trim()).filter(Boolean);
 
   return (
     <div className="p-6 max-w-2xl">
 
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">My Profile</h1>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Update your info — students will see this in the Faculty Directory
+          Students see this information in the Faculty Directory
         </p>
       </div>
 
-      {/* Success message */}
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-5 text-sm">
-          ✅ Profile updated successfully!
-        </div>
-      )}
-
-      {/* Error message */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-5 text-sm">
-          ⚠️ {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-6">
 
         {/* Designation */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
             Designation
           </label>
-          <select
-            name="designation"
-            value={formData.designation}
+          <select name="designation" value={formData.designation}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-400 text-sm"
+            className="w-full border-2 border-gray-200 focus:border-emerald-500 rounded-xl px-4 py-3 text-sm outline-none transition"
           >
-            {["Assistant Professor", "Associate Professor", "Professor", "HOD"].map((d) => (
+            {["Assistant Professor","Associate Professor","Professor","HOD"].map((d) => (
               <option key={d}>{d}</option>
             ))}
           </select>
@@ -143,40 +104,37 @@ const FacultyProfileEdit = () => {
 
         {/* Bio */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Bio <span className="text-gray-400 font-normal">(max 500 characters)</span>
+          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            Bio
+            <span className="text-gray-400 font-normal ml-1">(max 500 characters)</span>
           </label>
-          <textarea
-            name="bio"
-            value={formData.bio}
-            onChange={handleChange}
-            rows={3}
-            maxLength={500}
-            placeholder="e.g. I specialize in Machine Learning and have 10 years of industry experience..."
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-400 text-sm resize-none"
+          <textarea name="bio" value={formData.bio} onChange={handleChange}
+            rows={3} maxLength={500}
+            placeholder="Tell students about your background and teaching style..."
+            className="w-full border-2 border-gray-200 focus:border-emerald-500 rounded-xl px-4 py-3 text-sm outline-none transition resize-none"
           />
-          <p className="text-xs text-gray-400 text-right">{formData.bio.length}/500</p>
+          <p className="text-xs text-gray-400 text-right mt-1">
+            {formData.bio.length}/500
+          </p>
         </div>
 
         {/* Expertise */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
             Areas of Expertise
-            <span className="text-gray-400 font-normal"> (comma separated)</span>
+            <span className="text-gray-400 font-normal ml-1">(comma separated)</span>
           </label>
-          <input
-            type="text"
-            name="expertise"
-            value={formData.expertise}
+          <input type="text" name="expertise" value={formData.expertise}
             onChange={handleChange}
-            placeholder="e.g. Machine Learning, Data Structures, Web Development"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-400 text-sm"
+            placeholder="e.g. Machine Learning, React, Data Structures"
+            className="w-full border-2 border-gray-200 focus:border-emerald-500 rounded-xl px-4 py-3 text-sm outline-none transition"
           />
-          {/* Preview tags */}
-          {formData.expertise && (
-            <div className="flex flex-wrap gap-1 mt-2">
-              {formData.expertise.split(",").map((s) => s.trim()).filter(Boolean).map((tag) => (
-                <span key={tag} className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+          {/* Live tag preview */}
+          {expertiseTags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {expertiseTags.map((tag) => (
+                <span key={tag}
+                  className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-medium">
                   {tag}
                 </span>
               ))}
@@ -184,78 +142,67 @@ const FacultyProfileEdit = () => {
           )}
         </div>
 
-        {/* Office Address */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Office Address
-          </label>
-          <input
-            type="text"
-            name="officeAddress"
-            value={formData.officeAddress}
-            onChange={handleChange}
-            placeholder="e.g. Room 204, Block A, Chitkara University"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-400 text-sm"
-          />
-        </div>
-
-        {/* Visiting Hours */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Visiting Hours
-          </label>
-          <input
-            type="text"
-            name="visitingHours"
-            value={formData.visitingHours}
-            onChange={handleChange}
-            placeholder="e.g. Mon-Wed: 10am-12pm, Fri: 2pm-4pm"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-400 text-sm"
-          />
+        {/* Office + Hours in a grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Office Address
+            </label>
+            <input type="text" name="officeAddress" value={formData.officeAddress}
+              onChange={handleChange}
+              placeholder="e.g. Room 204, Block A"
+              className="w-full border-2 border-gray-200 focus:border-emerald-500 rounded-xl px-4 py-3 text-sm outline-none transition"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Visiting Hours
+            </label>
+            <input type="text" name="visitingHours" value={formData.visitingHours}
+              onChange={handleChange}
+              placeholder="e.g. Mon-Wed: 10am-12pm"
+              className="w-full border-2 border-gray-200 focus:border-emerald-500 rounded-xl px-4 py-3 text-sm outline-none transition"
+            />
+          </div>
         </div>
 
         {/* Phone */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
             Phone / Extension
           </label>
-          <input
-            type="text"
-            name="phone"
-            value={formData.phone}
+          <input type="text" name="phone" value={formData.phone}
             onChange={handleChange}
             placeholder="e.g. +91 98765 43210 or Ext. 2045"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-400 text-sm"
+            className="w-full border-2 border-gray-200 focus:border-emerald-500 rounded-xl px-4 py-3 text-sm outline-none transition"
           />
         </div>
 
         {/* Availability toggle */}
-        <div className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
+        <div className="flex items-center justify-between bg-gray-50 border-2 border-gray-200 rounded-xl px-5 py-4">
           <div>
-            <p className="text-sm font-medium text-gray-700">Available for Meetings</p>
-            <p className="text-xs text-gray-400">
-              Turn off to stop students from booking meetings with you
+            <p className="font-semibold text-gray-800 text-sm">
+              Available for Meetings
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {formData.isAvailable
+                ? "Students can book meetings with you"
+                : "Students cannot book meetings with you"}
             </p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              name="isAvailable"
-              checked={formData.isAvailable}
-              onChange={handleChange}
+            <input type="checkbox" name="isAvailable"
+              checked={formData.isAvailable} onChange={handleChange}
               className="sr-only peer"
             />
-            {/* Toggle switch styling */}
-            <div className="w-11 h-6 bg-gray-300 peer-checked:bg-green-500 rounded-full peer peer-focus:ring-2 peer-focus:ring-green-300 transition-colors" />
-            <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-5 transition-transform" />
+            <div className="w-12 h-6 bg-gray-300 peer-checked:bg-emerald-500 rounded-full transition-colors" />
+            <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-6 transition-transform" />
           </label>
         </div>
 
         {/* Save button */}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-green-700 hover:bg-green-800 text-white py-3 rounded-lg font-semibold transition disabled:opacity-60"
+        <button type="submit" disabled={loading}
+          className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white py-3.5 rounded-xl font-bold text-sm transition shadow-lg shadow-emerald-500/20"
         >
           {loading ? "Saving..." : "💾 Save Profile"}
         </button>

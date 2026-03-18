@@ -1,72 +1,205 @@
 // =============================================
-// Navbar.jsx — Top navigation bar
-// Shows on every page of the app
+// Navbar.jsx — Fixed Navbar with Better Contrast
 // =============================================
 
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "./Toast";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const toast = useToast();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
-    logout();           // clears user + token from context and localStorage
-    navigate("/");      // redirect to home page
+    logout();
+    toast.success("Logged out", "See you next time!");
+    navigate("/");
+    setMenuOpen(false);
   };
 
+  const isHome = location.pathname === "/";
+
   return (
-    <nav className="bg-blue-800 text-white px-6 py-4 flex justify-between items-center shadow-lg">
-      
-      {/* Logo — clicking takes you home */}
-      <Link to="/" className="text-xl font-bold tracking-wide hover:text-blue-200 transition">
-        🎓 ChitkaraConnect
-      </Link>
+    <nav className={`sticky top-0 z-40 transition-all duration-300 ${
+      isHome
+        ? "bg-[#060d1f]/90 backdrop-blur-md border-b border-white/10"
+        : "bg-white border-b border-gray-200 shadow-sm"
+    }`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex justify-between items-center h-16">
 
-      {/* Right side — changes based on login status */}
-      <div className="flex items-center gap-4">
-        {user ? (
-          // ── Logged in state ──
-          <>
-            <span className="text-sm text-blue-200 hidden sm:block">
-              👋 {user.name} &nbsp;|&nbsp;
-              <span className="capitalize">{user.role}</span>
+          {/* ── Logo ── */}
+          <Link to="/" className="flex items-center gap-2.5 group">
+            {/* Logo icon — always visible and distinct */}
+            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 flex-shrink-0">
+              <span className="text-white font-black text-base">C</span>
+            </div>
+            {/* Brand name — always white on home, always dark on other pages */}
+            <span className={`font-black text-lg tracking-tight transition ${
+              isHome ? "text-white" : "text-gray-900"
+            }`}>
+              Chitkara
+              <span className={isHome ? "text-blue-400" : "text-blue-600"}>
+                Connect
+              </span>
             </span>
+          </Link>
 
-            {/* Go to their dashboard */}
-            <Link
-              to={user.role === "student" ? "/student/dashboard" : "/faculty/dashboard"}
-              className="text-sm bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded transition"
-            >
-              Dashboard
-            </Link>
+          {/* ── Desktop nav ── */}
+          <div className="hidden sm:flex items-center gap-2">
+            {user ? (
+              <>
+                {/* User info pill */}
+                <div className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm ${
+                  isHome
+                    ? "bg-white/10 text-white border border-white/20"
+                    : "bg-gray-100 text-gray-800 border border-gray-200"
+                }`}>
+                  {/* Avatar */}
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black flex-shrink-0 ${
+                    user.role === "student" ? "bg-blue-600" : "bg-emerald-600"
+                  }`}>
+                    {user.name?.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="font-semibold max-w-28 truncate">
+                    {user.name}
+                  </span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${
+                    user.role === "student"
+                      ? isHome ? "bg-blue-500/30 text-blue-200" : "bg-blue-100 text-blue-700"
+                      : isHome ? "bg-emerald-500/30 text-emerald-200" : "bg-emerald-100 text-emerald-700"
+                  }`}>
+                    {user.role}
+                  </span>
+                </div>
 
-            {/* Logout button */}
-            <button
-              onClick={handleLogout}
-              className="text-sm bg-red-500 hover:bg-red-600 px-4 py-1.5 rounded transition"
-            >
-              Logout
-            </button>
-          </>
-        ) : (
-          // ── Logged out state ──
-          <>
-            <Link
-              to="/login/student"
-              className="text-sm hover:text-blue-200 transition"
-            >
-              Student Login
-            </Link>
-            <Link
-              to="/login/faculty"
-              className="text-sm bg-white text-blue-800 hover:bg-blue-100 px-4 py-1.5 rounded font-semibold transition"
-            >
-              Faculty Login
-            </Link>
-          </>
-        )}
+                {/* Dashboard link */}
+                <Link
+                  to={user.role === "student" ? "/student/dashboard" : "/faculty/dashboard"}
+                  className={`text-sm font-semibold px-4 py-2 rounded-xl transition ${
+                    isHome
+                      ? "text-white/80 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  }`}
+                >
+                  Dashboard
+                </Link>
+
+                {/* Logout */}
+                <button
+                  onClick={handleLogout}
+                  className="text-sm font-semibold px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl transition shadow-sm"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login/student"
+                  className={`text-sm font-semibold px-4 py-2 rounded-xl transition ${
+                    isHome
+                      ? "text-white/80 hover:text-white hover:bg-white/10 border border-white/20"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-100 border border-gray-200"
+                  }`}
+                >
+                  Student Login
+                </Link>
+                <Link
+                  to="/login/faculty"
+                  className="text-sm font-semibold px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition shadow-md shadow-blue-500/25"
+                >
+                  Faculty Login
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* ── Mobile hamburger ── */}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className={`sm:hidden p-2.5 rounded-xl transition ${
+              isHome
+                ? "text-white hover:bg-white/10 border border-white/20"
+                : "text-gray-700 hover:bg-gray-100 border border-gray-200"
+            }`}
+          >
+            {menuOpen ? (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* ── Mobile dropdown menu ── */}
+      {menuOpen && (
+        <div className="sm:hidden bg-white border-t border-gray-100 shadow-lg">
+          <div className="px-4 py-3 space-y-2">
+            {user ? (
+              <>
+                {/* User info card */}
+                <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0 ${
+                    user.role === "student" ? "bg-blue-600" : "bg-emerald-600"
+                  }`}>
+                    {user.name?.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-gray-900 truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 capitalize">
+                      {user.role} · {user.department}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Dashboard */}
+                <Link
+                  to={user.role === "student" ? "/student/dashboard" : "/faculty/dashboard"}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-xl transition"
+                >
+                  <span>📊</span> Dashboard
+                </Link>
+
+                {/* Logout */}
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-xl transition"
+                >
+                  <span>🚪</span> Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login/student"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-xl transition border border-gray-200"
+                >
+                  <span>🎓</span> Student Login
+                </Link>
+                <Link
+                  to="/login/faculty"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition"
+                >
+                  <span>👨‍🏫</span> Faculty Login
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
