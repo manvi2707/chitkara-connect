@@ -1,63 +1,74 @@
+// =============================================
+// server/controllers/facultyController.js
+// =============================================
+// Updated: name and department can now be updated
+
 const Faculty = require("../models/Faculty");
 
-// ── GET ALL FACULTY ──────────────────────────
-// GET /api/faculty
-// Public — no login needed
-// Used by the Faculty Directory page
+// GET all faculty
 const getAllFaculty = async (req, res) => {
   try {
-    // .select("-password") means return everything EXCEPT the password field
-    // Never send passwords to the frontend — even hashed ones
     const facultyList = await Faculty.find().select("-password");
-
     res.json(facultyList);
   } catch (error) {
     res.status(500).json({ message: "Server error: " + error.message });
   }
 };
 
-// ── GET SINGLE FACULTY ───────────────────────
-// GET /api/faculty/:id
-// Public — used when clicking on a faculty card for full details
+// GET single faculty by ID
 const getFacultyById = async (req, res) => {
   try {
-    // req.params.id comes from the URL → /api/faculty/64abc123
     const faculty = await Faculty.findById(req.params.id).select("-password");
-
     if (!faculty) {
       return res.status(404).json({ message: "Faculty not found." });
     }
-
     res.json(faculty);
   } catch (error) {
     res.status(500).json({ message: "Server error: " + error.message });
   }
 };
 
-// ── UPDATE FACULTY PROFILE ───────────────────
-// PUT /api/faculty/profile/update
-// Protected — only logged-in faculty can update their OWN profile
+// PUT update faculty profile
+// Now includes name and department too
 const updateFacultyProfile = async (req, res) => {
   try {
-    // Pull out only the fields faculty is allowed to update
     const {
+      name,           // ← NEW
+      department,     // ← NEW
+      designation,
       bio,
       officeAddress,
       visitingHours,
-      expertise,       // array: ["Machine Learning", "DBMS"]
+      expertise,
       phone,
-      isAvailable,     // boolean: true or false
-      designation,
+      isAvailable,
     } = req.body;
 
-    // req.user.id comes from the JWT token (set by authMiddleware)
-    // This ensures faculty can only update THEIR OWN profile, not anyone else's
+    // Validate name is not empty
+    if (name && name.trim().length < 2) {
+      return res.status(400).json({ message: "Name must be at least 2 characters." });
+    }
+
+    // Validate department is a valid value
+    const validDepartments = ["CSE", "ECE", "ME", "CE", "IT", "MBA", "Other"];
+    if (department && !validDepartments.includes(department)) {
+      return res.status(400).json({ message: "Invalid department." });
+    }
+
     const faculty = await Faculty.findByIdAndUpdate(
       req.user.id,
-      { bio, officeAddress, visitingHours, expertise, phone, isAvailable, designation },
+      {
+        name,
+        department,
+        designation,
+        bio,
+        officeAddress,
+        visitingHours,
+        expertise,
+        phone,
+        isAvailable,
+      },
       { new: true, runValidators: true }
-      // new: true → return the UPDATED document (not the old one)
-      // runValidators: true → check schema rules when updating too
     ).select("-password");
 
     if (!faculty) {
