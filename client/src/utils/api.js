@@ -1,5 +1,5 @@
 // =============================================
-// client/src/utils/api.js — Updated for Phase 2
+// client/src/utils/api.js — Updated
 // =============================================
 
 import axios from "axios";
@@ -8,12 +8,9 @@ const API = axios.create({
   baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
 });
 
-// Auto-attach JWT token to every request
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("chitkaraToken");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
@@ -40,10 +37,13 @@ export const getInbox        = ()         => API.get("/messages/inbox");
 export const replyToMessage  = (id, data) => API.post(`/messages/${id}/reply`, data);
 export const markMessageRead = (id)       => API.put(`/messages/${id}/read`);
 
-// ── Photo Upload (NEW) ───────────────────────
-// Note: photo uploads use FormData not JSON
-// The actual upload call is inside PhotoUpload.jsx using API directly
-// These are just for convenience if needed elsewhere
-export const deleteFacultyPhoto = () => API.delete("/upload/photo");
+// ── Photo Upload ─────────────────────────────
+export const deletePhoto = () => API.delete("/upload/photo");
+
+// ── Availability (NEW) ───────────────────────
+// Get available time slots for a faculty on a specific date
+// date format: "2025-03-26"
+export const getAvailableSlots = (facultyId, date) =>
+  API.get(`/availability/${facultyId}?date=${date}`);
 
 export default API;
