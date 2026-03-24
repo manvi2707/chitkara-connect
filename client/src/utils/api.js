@@ -31,8 +31,21 @@ export const getMyMeetings      = ()         => API.get("/meetings/my-meetings")
 export const getFacultyMeetings = ()         => API.get("/meetings/faculty-meetings");
 export const respondToMeeting   = (id, data) => API.put(`/meetings/${id}/respond`, data);
 
-// ── Messages ─────────────────────────────────
-export const sendMessage     = (data)     => API.post("/messages/send", data);
+// ── Messages — NEW conversation-based API ────
+// Get all conversation threads for sidebar
+export const getConversations = () => API.get("/messages/conversations");
+
+// Get all messages inside a thread
+export const getThreadMessages = (conversationId) =>
+  API.get(`/messages/conversations/${conversationId}/messages`);
+
+// Open or create a conversation with someone
+export const openConversation = (data) => API.post("/messages/conversations/open", data);
+
+// Send a message (REST — socket handles real-time delivery)
+export const sendMessage = (data) => API.post("/messages/send", data);
+
+// ── Old API kept for backwards compat ────────
 export const getInbox        = ()         => API.get("/messages/inbox");
 export const replyToMessage  = (id, data) => API.post(`/messages/${id}/reply`, data);
 export const markMessageRead = (id)       => API.put(`/messages/${id}/read`);
@@ -40,9 +53,7 @@ export const markMessageRead = (id)       => API.put(`/messages/${id}/read`);
 // ── Photo Upload ─────────────────────────────
 export const deletePhoto = () => API.delete("/upload/photo");
 
-// ── Availability (NEW) ───────────────────────
-// Get available time slots for a faculty on a specific date
-// date format: "2025-03-26"
+// ── Availability ─────────────────────────────
 export const getAvailableSlots = (facultyId, date) =>
   API.get(`/availability/${facultyId}?date=${date}`);
 

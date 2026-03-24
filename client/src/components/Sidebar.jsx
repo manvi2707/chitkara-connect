@@ -1,8 +1,6 @@
 // =============================================
-// components/Sidebar.jsx — Mobile Responsive
+// components/Sidebar.jsx — With unread badge
 // =============================================
-// Desktop: sidebar on the left (unchanged)
-// Mobile:  bottom tab bar (like a phone app)
 
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
@@ -15,22 +13,21 @@ const Sidebar = ({ tabs, activeTab, setActiveTab }) => {
   const [showPhotoUpload, setShowPhotoUpload] = useState(false);
 
   const activeColor = isStudent ? "bg-blue-600" : "bg-emerald-600";
-  const activeBorder = isStudent ? "border-blue-600" : "border-emerald-600";
-  const activeText = isStudent ? "text-blue-600" : "text-emerald-600";
+  const activeText  = isStudent ? "text-blue-600" : "text-emerald-600";
 
   return (
     <>
       {/* ══════════════════════════════════════
-          DESKTOP SIDEBAR — hidden on mobile
+          DESKTOP SIDEBAR — fixed, never scrolls
           ══════════════════════════════════════ */}
-      <aside className={`hidden md:flex w-64 min-h-screen flex-col ${
+      <aside className={`hidden md:flex w-64 flex-col fixed top-16 left-0 bottom-0 z-30 ${
         isStudent
           ? "bg-gradient-to-b from-blue-900 to-blue-950"
           : "bg-gradient-to-b from-emerald-900 to-emerald-950"
-      } text-white flex-shrink-0`}>
+      } text-white`}>
 
-        {/* User profile section */}
-        <div className="p-5 border-b border-white/10">
+        {/* User profile — fixed, never scrolls */}
+        <div className="flex-shrink-0 p-5 border-b border-white/10">
           <div className="flex items-center gap-3 mb-3">
             <button
               onClick={() => setShowPhotoUpload(true)}
@@ -55,9 +52,7 @@ const Sidebar = ({ tabs, activeTab, setActiveTab }) => {
             </div>
           </div>
 
-          <p className="text-xs text-white/30 text-center mb-3">
-            👆 Click photo to update
-          </p>
+          <p className="text-xs text-white/30 text-center mb-3">👆 Click photo to update</p>
 
           <div className="flex gap-2">
             <span className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${
@@ -71,8 +66,8 @@ const Sidebar = ({ tabs, activeTab, setActiveTab }) => {
           </div>
         </div>
 
-        {/* Desktop tab navigation */}
-        <nav className="flex-1 p-3 space-y-1">
+        {/* Nav tabs — only this part scrolls if many tabs */}
+        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -84,9 +79,18 @@ const Sidebar = ({ tabs, activeTab, setActiveTab }) => {
               }`}
             >
               <span className="text-base">{tab.label.split(" ")[0]}</span>
-              <span>{tab.label.split(" ").slice(1).join(" ")}</span>
+              <span className="flex-1">{tab.label.split(" ").slice(1).join(" ")}</span>
+
+              {/* Unread badge — shown when not active */}
+              {tab.badge > 0 && activeTab !== tab.id && (
+                <span className="bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
+                  {tab.badge > 99 ? "99+" : tab.badge}
+                </span>
+              )}
+
+              {/* Active dot */}
               {activeTab === tab.id && (
-                <span className={`ml-auto w-1.5 h-1.5 rounded-full ${
+                <span className={`w-1.5 h-1.5 rounded-full ${
                   isStudent ? "bg-blue-500" : "bg-emerald-500"
                 }`} />
               )}
@@ -94,19 +98,21 @@ const Sidebar = ({ tabs, activeTab, setActiveTab }) => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-white/10">
+        {/* Footer — fixed at bottom */}
+        <div className="flex-shrink-0 p-4 border-t border-white/10">
           <p className="text-xs text-white/30 text-center">ChitkaraConnect v2.0</p>
         </div>
       </aside>
 
+      {/* Spacer — pushes main content right of fixed sidebar */}
+      <div className="hidden md:block w-64 flex-shrink-0" />
+
       {/* ══════════════════════════════════════
-          MOBILE TOP BAR — shown only on mobile
+          MOBILE TOP BAR
           ══════════════════════════════════════ */}
       <div className={`md:hidden fixed top-16 left-0 right-0 z-30 ${
         isStudent ? "bg-blue-900" : "bg-emerald-900"
       } px-4 py-3 flex items-center justify-between border-b border-white/10`}>
-
-        {/* User info */}
         <div className="flex items-center gap-2.5">
           <button onClick={() => setShowPhotoUpload(true)}>
             <UserAvatar
@@ -123,8 +129,6 @@ const Sidebar = ({ tabs, activeTab, setActiveTab }) => {
             <p className="text-white/50 text-xs capitalize">{user?.role}</p>
           </div>
         </div>
-
-        {/* Current tab name */}
         <p className="text-white font-semibold text-sm">
           {tabs.find(t => t.id === activeTab)?.label || ""}
         </p>
@@ -133,26 +137,27 @@ const Sidebar = ({ tabs, activeTab, setActiveTab }) => {
       {/* ══════════════════════════════════════
           MOBILE BOTTOM TAB BAR
           ══════════════════════════════════════ */}
-      <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 flex`}>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 flex">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 transition ${
-              activeTab === tab.id
-                ? activeText
-                : "text-gray-400 hover:text-gray-600"
+            className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 transition relative ${
+              activeTab === tab.id ? activeText : "text-gray-400 hover:text-gray-600"
             }`}
           >
-            {/* Tab icon */}
-            <span className="text-lg leading-none">
+            <span className="text-lg leading-none relative">
               {tab.label.split(" ")[0]}
+              {/* Mobile badge */}
+              {tab.badge > 0 && activeTab !== tab.id && (
+                <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[9px] font-bold min-w-[14px] h-[14px] rounded-full flex items-center justify-center px-0.5">
+                  {tab.badge > 9 ? "9+" : tab.badge}
+                </span>
+              )}
             </span>
-            {/* Tab label — shortened */}
             <span className="text-xs font-medium leading-none truncate max-w-16">
               {tab.shortLabel || tab.label.split(" ").slice(1).join(" ")}
             </span>
-            {/* Active indicator dot */}
             {activeTab === tab.id && (
               <span className={`w-1 h-1 rounded-full ${activeColor}`} />
             )}
@@ -160,10 +165,7 @@ const Sidebar = ({ tabs, activeTab, setActiveTab }) => {
         ))}
       </nav>
 
-      {/* Photo upload popup */}
-      {showPhotoUpload && (
-        <PhotoUpload onClose={() => setShowPhotoUpload(false)} />
-      )}
+      {showPhotoUpload && <PhotoUpload onClose={() => setShowPhotoUpload(false)} />}
     </>
   );
 };

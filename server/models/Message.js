@@ -1,20 +1,26 @@
+// =============================================
+// server/models/Message.js — With Receipts
+// =============================================
+
 const mongoose = require("mongoose");
 
 const messageSchema = new mongoose.Schema(
   {
-    // Who sent the message
+    conversation: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Conversation",
+      required: true,
+    },
     sender: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      refPath: "senderModel",   // dynamic — points to Student OR Faculty
+      refPath: "senderModel",
     },
     senderModel: {
       type: String,
       required: true,
-      enum: ["Student", "Faculty"],  // tells mongoose which collection to look in
+      enum: ["Student", "Faculty"],
     },
-
-    // Who receives the message
     receiver: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
@@ -25,26 +31,33 @@ const messageSchema = new mongoose.Schema(
       required: true,
       enum: ["Student", "Faculty"],
     },
-
-    subject: {
-      type: String,
-      required: [true, "Subject is required"],
-      maxlength: 150,
-    },
     body: {
       type: String,
       required: [true, "Message body cannot be empty"],
     },
+
+    // ── Delivery receipt ───────────────────────
+    // true when receiver is online or fetches conversations
+    isDelivered: {
+      type: Boolean,
+      default: false,
+    },
+
+    // ── Read receipt ───────────────────────────
+    // true when receiver opens this conversation thread
+    isReadByReceiver: {
+      type: Boolean,
+      default: false,
+    },
+
+    // Legacy — kept for backwards compat
     isRead: {
       type: Boolean,
-      default: false,   // unread when first received
+      default: false,
     },
-    // If this is a reply, store the original message ID
-    parentMessage: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Message",
-      default: null,    // null means it's a fresh message, not a reply
-    },
+
+    subject: { type: String, maxlength: 150, default: "" },
+    parentMessage: { type: mongoose.Schema.Types.ObjectId, ref: "Message", default: null },
   },
   { timestamps: true }
 );

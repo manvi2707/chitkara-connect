@@ -1,8 +1,8 @@
 // =============================================
-// App.jsx — Updated with Footer
+// App.jsx — Updated with Footer + Messages fix
 // =============================================
 
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./components/Toast";
 import Navbar from "./components/Navbar";
@@ -15,17 +15,20 @@ import LoginStudent from "./pages/LoginStudent";
 import LoginFaculty from "./pages/LoginFaculty";
 import StudentDashboard from "./pages/StudentDashboard";
 import FacultyDashboard from "./pages/FacultyDashboard";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 
 // ── All App Routes ───────────────────────────
 const AppRoutes = () => {
+  const location = useLocation();
+  const isMessages = location.pathname === "/messages";
+
   return (
-    // min-h-screen + flex column makes footer stick to bottom
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      {/* Main content grows to fill space */}
-      <main className="flex-1">
+      {/* On Messages page: no scroll, fill height. Other pages: normal scroll. */}
+      <main className={`flex-1 ${isMessages ? "overflow-hidden flex flex-col" : ""}`}>
         <Routes>
           {/* Public routes */}
           <Route path="/"              element={<Home />} />
@@ -52,13 +55,23 @@ const AppRoutes = () => {
             }
           />
 
+          {/* Protected: Messages (both roles) */}
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute>
+                <Messages />
+              </ProtectedRoute>
+            }
+          />
+
           {/* 404 page */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
 
-      {/* Footer — hides itself on dashboard pages */}
-      <Footer />
+      {/* Footer hides itself on dashboard/messages pages */}
+      {!isMessages && <Footer />}
     </div>
   );
 };
