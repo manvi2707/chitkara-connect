@@ -1,5 +1,5 @@
 // =============================================
-// server/server.js — With receipts + onlineUsers exposed
+// server/server.js — With chatbot route added
 // =============================================
 
 const express    = require("express");
@@ -17,6 +17,7 @@ const meetingRoutes      = require("./routes/meetingRoutes");
 const messageRoutes      = require("./routes/messageRoutes");
 const uploadRoutes       = require("./routes/uploadRoutes");
 const availabilityRoutes = require("./routes/availabilityRoutes");
+const chatbotRoutes      = require("./routes/chatbotRoutes"); // ← NEW
 
 const app    = express();
 const server = http.createServer(app);
@@ -83,8 +84,6 @@ io.on("connection", (socket) => {
 
   // Receiver opened a thread — mark all as read, notify sender
   socket.on("conversation:opened", ({ conversationId, readerId }) => {
-    // Find sender's socket and tell them their messages were read
-    // (We broadcast to the room — sender will pick it up)
     socket.to(conversationId).emit("messages:read", {
       conversationId,
       readBy: readerId,
@@ -112,6 +111,7 @@ app.use("/api/meetings",     meetingRoutes);
 app.use("/api/messages",     messageRoutes);
 app.use("/api/upload",       uploadRoutes);
 app.use("/api/availability", availabilityRoutes);
+app.use("/api/chatbot",      chatbotRoutes); // ← NEW
 
 app.get("/", (req, res) => res.json({ message: "ChitkaraConnect API running 🚀" }));
 

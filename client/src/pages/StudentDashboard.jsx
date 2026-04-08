@@ -1,5 +1,5 @@
 // =============================================
-// pages/StudentDashboard.jsx
+// pages/StudentDashboard.jsx — With Chatbot
 // =============================================
 
 import { useState, useCallback } from "react";
@@ -8,6 +8,7 @@ import FacultyDirectory from "./FacultyDirectory";
 import Meetings from "./Meetings";
 import Messages from "./Messages";
 import CollegeMap from "./CollegeMap";
+import ChatbotWidget from "../components/ChatbotWidget"; // ← NEW
 
 const StudentDashboard = () => {
   const [activeTab,      setActiveTab]      = useState("directory");
@@ -47,6 +48,9 @@ const StudentDashboard = () => {
         </div>
         {!isMessages && <div className="md:hidden h-20 flex-shrink-0" />}
       </main>
+
+      {/* ── AI Chatbot — only on student portal ── */}
+      <ChatbotWidget />
     </div>
   );
 };
