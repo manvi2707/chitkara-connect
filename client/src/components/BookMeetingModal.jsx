@@ -14,18 +14,18 @@ import { useToast } from "./Toast";
 const BookMeetingModal = ({ faculty, onClose }) => {
   const toast = useToast();
 
-  const [date, setDate]                   = useState("");
-  const [reason, setReason]               = useState("");
-  const [loading, setLoading]             = useState(false);
-  const [slotsLoading, setSlotsLoading]   = useState(false);
-  const [success, setSuccess]             = useState(false);
+  const [date, setDate] = useState("");
+  const [reason, setReason] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [availableSlots, setAvailableSlots] = useState([]);
-  const [bookedSlots, setBookedSlots]     = useState([]);
+  const [bookedSlots, setBookedSlots] = useState([]);
   const [selectedSlots, setSelectedSlots] = useState([]);
   // selectedSlots = array of consecutive slot strings
   // e.g. ["10:00 AM - 10:30 AM", "10:30 AM - 11:00 AM"]
-  const [slotsInfo, setSlotsInfo]         = useState(null);
-  const [dateSelected, setDateSelected]   = useState(false);
+  const [slotsInfo, setSlotsInfo] = useState(null);
+  const [dateSelected, setDateSelected] = useState(false);
 
   // ── Today for min date ───────────────────
   const today = new Date().toISOString().split("T")[0];
@@ -50,7 +50,7 @@ const BookMeetingModal = ({ faculty, onClose }) => {
       // Ensure allSlots is always an array even if backend omitted it
       const normalized = {
         ...data,
-        allSlots:    data.allSlots    || [],
+        allSlots: data.allSlots || [],
         bookedSlots: data.bookedSlots || [],
       };
 
@@ -88,8 +88,8 @@ const BookMeetingModal = ({ faculty, onClose }) => {
     }
 
     // Find index of last selected slot in availableSlots
-    const lastSelected     = selectedSlots[selectedSlots.length - 1];
-    const lastSelectedIdx  = availableSlots.indexOf(lastSelected);
+    const lastSelected = selectedSlots[selectedSlots.length - 1];
+    const lastSelectedIdx = availableSlots.indexOf(lastSelected);
 
     // Case 3: This slot is RIGHT after the last selected → extend
     if (idx === lastSelectedIdx + 1) {
@@ -110,10 +110,10 @@ const BookMeetingModal = ({ faculty, onClose }) => {
 
     // Get start time from first slot, end time from last slot
     const firstSlot = selectedSlots[0];
-    const lastSlot  = selectedSlots[selectedSlots.length - 1];
+    const lastSlot = selectedSlots[selectedSlots.length - 1];
 
     const startTime = firstSlot.split(" - ")[0];
-    const endTime   = lastSlot.split(" - ")[1];
+    const endTime = lastSlot.split(" - ")[1];
 
     return `${startTime} - ${endTime}`;
   };
@@ -125,7 +125,7 @@ const BookMeetingModal = ({ faculty, onClose }) => {
     const totalMins = count * 30;
     if (totalMins < 60) return `${totalMins} minutes`;
     const hours = Math.floor(totalMins / 60);
-    const mins  = totalMins % 60;
+    const mins = totalMins % 60;
     if (mins === 0) return `${hours} hour${hours > 1 ? "s" : ""}`;
     return `${hours}h ${mins}m`;
   };
@@ -147,7 +147,7 @@ const BookMeetingModal = ({ faculty, onClose }) => {
         await bookMeeting({
           facultyId: faculty._id,
           date,
-          timeSlot:  slot,
+          timeSlot: slot,
           reason,
         });
       }
@@ -164,12 +164,12 @@ const BookMeetingModal = ({ faculty, onClose }) => {
 
   // ── Slot status helper ────────────────────
   const getSlotStatus = (slot) => {
-    if (bookedSlots.includes(slot))    return "booked";
-    if (selectedSlots.includes(slot))  return "selected";
+    if (bookedSlots.includes(slot)) return "booked";
+    if (selectedSlots.includes(slot)) return "selected";
     return "available";
   };
 
-  const combinedSlot  = getCombinedTimeSlot();
+  const combinedSlot = getCombinedTimeSlot();
   const durationLabel = getDurationLabel();
 
   return (
@@ -304,24 +304,24 @@ const BookMeetingModal = ({ faculty, onClose }) => {
 
               {/* All slots booked */}
               {!slotsLoading && dateSelected &&
-               slotsInfo?.allSlots?.length > 0 && availableSlots.length === 0 && (
-                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
-                  <p className="text-sm font-semibold text-red-700 mb-2">
-                    ❌ Fully booked on {slotsInfo?.dayOfWeek}
-                  </p>
-                  <p className="text-xs text-red-600 mb-2">
-                    All slots are taken. Try another date.
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {slotsInfo.allSlots.map((slot) => (
-                      <span key={slot}
-                        className="text-xs bg-red-100 text-red-400 px-2 py-0.5 rounded-full line-through opacity-70">
-                        {slot}
-                      </span>
-                    ))}
+                slotsInfo?.allSlots?.length > 0 && availableSlots.length === 0 && (
+                  <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+                    <p className="text-sm font-semibold text-red-700 mb-2">
+                      ❌ Fully booked on {slotsInfo?.dayOfWeek}
+                    </p>
+                    <p className="text-xs text-red-600 mb-2">
+                      All slots are taken. Try another date.
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {slotsInfo.allSlots.map((slot) => (
+                        <span key={slot}
+                          className="text-xs bg-red-100 text-red-400 px-2 py-0.5 rounded-full line-through opacity-70">
+                          {slot}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* ── Slot grid ── */}
               {!slotsLoading && dateSelected && availableSlots.length > 0 && (
@@ -336,12 +336,12 @@ const BookMeetingModal = ({ faculty, onClose }) => {
                   <div className="grid grid-cols-2 gap-2">
                     {slotsInfo.allSlots.map((slot) => {
                       const status = getSlotStatus(slot);
-                      const isBooked   = status === "booked";
+                      const isBooked = status === "booked";
                       const isSelected = status === "selected";
 
                       // Is this the first or last in selected range?
                       const isFirst = selectedSlots[0] === slot;
-                      const isLast  = selectedSlots[selectedSlots.length - 1] === slot;
+                      const isLast = selectedSlots[selectedSlots.length - 1] === slot;
 
                       return (
                         <button
@@ -355,8 +355,8 @@ const BookMeetingModal = ({ faculty, onClose }) => {
                             ${isBooked
                               ? "bg-gray-100 text-gray-300 border-gray-100 cursor-not-allowed line-through"
                               : isSelected
-                              ? "bg-blue-600 text-white border-blue-600 shadow-md scale-105"
-                              : "bg-white text-gray-700 border-gray-200 hover:border-blue-400 hover:bg-blue-50"
+                                ? "bg-blue-600 text-white border-blue-600 shadow-md scale-105"
+                                : "bg-white text-gray-700 border-gray-200 hover:border-blue-400 hover:bg-blue-50"
                             }
                           `}
                         >
@@ -437,10 +437,10 @@ const BookMeetingModal = ({ faculty, onClose }) => {
               {loading
                 ? "Sending..."
                 : selectedSlots.length === 0
-                ? "Select a time slot first"
-                : selectedSlots.length === 1
-                ? "Send Meeting Request (30 min)"
-                : `Send Meeting Request (${durationLabel})`
+                  ? "Select a time slot first"
+                  : selectedSlots.length === 1
+                    ? "Send Meeting Request (30 min)"
+                    : `Send Meeting Request (${durationLabel})`
               }
             </button>
           </form>

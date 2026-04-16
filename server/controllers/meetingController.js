@@ -1,13 +1,26 @@
 // =============================================
 // server/controllers/meetingController.js
 // =============================================
-// Updated: triggers availability check after
-// every booking and response
+// Updated: fires email notifications when
+//   • a meeting is booked  → email to faculty
+//   • faculty accepts      → email to student
+//   • faculty rejects      → email to student
+//
+// Emails are sent fire-and-forget (non-blocking)
+// so a mail failure never breaks the API response.
 
-const Meeting = require("../models/Meeting");
+const Meeting  = require("../models/Meeting");
+const Student  = require("../models/Student");
+const Faculty  = require("../models/Faculty");
 const { checkAndUpdateFacultyAvailability } = require("./availabilityController");
+const {
+  sendMeetingRequestEmail,
+  sendMeetingAcceptedEmail,
+  sendMeetingRejectedEmail,
+} = require("../utils/emailService");
 
 // ── BOOK A MEETING ───────────────────────────
+// POST /api/meetings/book  — student only
 const bookMeeting = async (req, res) => {
   try {
     const { facultyId, date, timeSlot, reason } = req.body;
@@ -31,6 +44,7 @@ const bookMeeting = async (req, res) => {
       });
     }
 
+    // Create the meeting
     const meeting = await Meeting.create({
       student:  req.user.id,
       faculty:  facultyId,
@@ -39,8 +53,24 @@ const bookMeeting = async (req, res) => {
       reason,
     });
 
-    // ← Check if faculty still has free slots after this booking
+    // Re-check faculty availability after this booking
     await checkAndUpdateFacultyAvailability(facultyId);
+
+    // ── Fire email to faculty (non-blocking) ──
+    // We fetch the student and faculty docs for their email addresses.
+    // Using Promise.all so we only do two DB reads in parallel.
+    Promise.all([
+      Student.findById(req.user.id).select("name email department year"),
+      Faculty.findById(facultyId).select("name email department designation"),
+    ])
+      .then(([student, faculty]) => {
+        if (student && faculty) {
+          sendMeetingRequestEmail({ faculty, student, meeting }).catch((err) =>
+            console.error("📧 Email error (booking):", err.message)
+          );
+        }
+      })
+      .catch((err) => console.error("📧 Email fetch error:", err.message));
 
     res.status(201).json({ message: "Meeting request sent!", meeting });
   } catch (error) {
@@ -73,27 +103,46 @@ const getFacultyMeetings = async (req, res) => {
 };
 
 // ── FACULTY RESPONDS TO A MEETING ────────────
+// PUT /api/meetings/:meetingId/respond  — faculty only
 const respondToMeeting = async (req, res) => {
   try {
     const { status, facultyNote } = req.body;
 
+    // Find and verify ownership
     const meeting = await Meeting.findById(req.params.meetingId);
     if (!meeting) {
       return res.status(404).json({ message: "Meeting not found." });
     }
-
     if (meeting.faculty.toString() !== req.user.id) {
       return res.status(403).json({ message: "Not authorized." });
     }
 
-    meeting.status     = status;
+    // Save the response
+    meeting.status      = status;
     meeting.facultyNote = facultyNote || "";
     await meeting.save();
 
-    // ← Re-check availability after response
-    // If faculty rejected a meeting — that slot is free again
-    // If accepted — check if still has other free slots
+    // Re-check availability (rejected slot becomes free again)
     await checkAndUpdateFacultyAvailability(meeting.faculty.toString());
+
+    // ── Fire email to student (non-blocking) ──
+    // Fetch both user docs in parallel for their emails
+    Promise.all([
+      Faculty.findById(req.user.id).select("name email department designation officeAddress"),
+      Student.findById(meeting.student).select("name email department year"),
+    ])
+      .then(([faculty, student]) => {
+        if (!faculty || !student) return;
+
+        const emailFn = status === "accepted"
+          ? sendMeetingAcceptedEmail
+          : sendMeetingRejectedEmail;
+
+        emailFn({ faculty, student, meeting }).catch((err) =>
+          console.error(`📧 Email error (${status}):`, err.message)
+        );
+      })
+      .catch((err) => console.error("📧 Email fetch error:", err.message));
 
     res.json({ message: `Meeting ${status} successfully!`, meeting });
   } catch (error) {
