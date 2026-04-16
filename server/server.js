@@ -25,7 +25,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "https://chitkara-connect.netlify.app",
     methods: ["GET", "POST"],
   },
 });
@@ -104,7 +104,7 @@ io.on("connection", (socket) => {
 });
 
 app.use(cors({
-  origin: "*",
+  origin: "https://chitkara-connect.netlify.app",
   credentials: true
 }));
 app.use(express.json());
