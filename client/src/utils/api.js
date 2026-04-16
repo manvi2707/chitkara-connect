@@ -67,4 +67,5 @@ export const updateStudentProfile = (data) => API.put("/student/profile", data);
 
 // ── Change Password ───────────────────────────
 export const changePassword = (data) => API.put("/auth/change-password", data);
+console.log("API URL:", process.env.REACT_APP_API_URL);
 export default API;
