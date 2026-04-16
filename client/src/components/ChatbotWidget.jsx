@@ -1,8 +1,8 @@
 // =============================================
-// client/src/components/ChatbotWidget.jsx — FIXED
+// client/src/components/ChatbotWidget.jsx — DRAGGABLE
 // =============================================
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import API from "../utils/api";
 import BookMeetingModal from "./BookMeetingModal";
 
@@ -134,6 +134,13 @@ const ChatbotWidget = () => {
   const [bookingFaculty, setBookingFaculty]   = useState(null);
   const [hasNewMessage, setHasNewMessage]     = useState(false);
 
+  // ── Drag state ───────────────────────────────
+  const [position, setPosition] = useState({ x: 24, y: 24 }); // distance from bottom-right
+  const isDragging   = useRef(false);
+  const dragOffset   = useRef({ x: 0, y: 0 });
+  const hasDragged   = useRef(false);           // to distinguish click vs drag
+  const buttonRef    = useRef(null);
+
   const messagesEndRef = useRef(null);
   const inputRef       = useRef(null);
 
@@ -157,6 +164,103 @@ const ChatbotWidget = () => {
       }
     }
   }, [isOpen]);
+
+  // ── Drag handlers ────────────────────────────
+  const onMouseDown = useCallback((e) => {
+    // Only drag on the button itself, not child elements like close button inside chat
+    isDragging.current = true;
+    hasDragged.current = false;
+
+    // Current button position from right/bottom edge
+    const btnRect = buttonRef.current.getBoundingClientRect();
+    dragOffset.current = {
+      x: e.clientX - btnRect.left,
+      y: e.clientY - btnRect.top,
+    };
+
+    e.preventDefault();
+  }, []);
+
+  const onMouseMove = useCallback((e) => {
+    if (!isDragging.current) return;
+    hasDragged.current = true;
+
+    const newX = window.innerWidth  - e.clientX + dragOffset.current.x - 56; // 56 = button width
+    const newY = window.innerHeight - e.clientY + dragOffset.current.y - 56;
+
+    // Clamp so button stays on screen
+    setPosition({
+      x: Math.max(8, Math.min(newX, window.innerWidth  - 64)),
+      y: Math.max(8, Math.min(newY, window.innerHeight - 64)),
+    });
+  }, []);
+
+  const onMouseUp = useCallback(() => {
+    isDragging.current = false;
+  }, []);
+
+  // Touch support
+  const onTouchStart = useCallback((e) => {
+    const touch = e.touches[0];
+    isDragging.current = true;
+    hasDragged.current = false;
+    const btnRect = buttonRef.current.getBoundingClientRect();
+    dragOffset.current = {
+      x: touch.clientX - btnRect.left,
+      y: touch.clientY - btnRect.top,
+    };
+  }, []);
+
+  const onTouchMove = useCallback((e) => {
+    if (!isDragging.current) return;
+    hasDragged.current = true;
+    const touch = e.touches[0];
+
+    const newX = window.innerWidth  - touch.clientX + dragOffset.current.x - 56;
+    const newY = window.innerHeight - touch.clientY + dragOffset.current.y - 56;
+
+    setPosition({
+      x: Math.max(8, Math.min(newX, window.innerWidth  - 64)),
+      y: Math.max(8, Math.min(newY, window.innerHeight - 64)),
+    });
+
+    e.preventDefault(); // prevent page scroll while dragging
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    isDragging.current = false;
+  }, []);
+
+  // Attach global mouse/touch move+up listeners
+  useEffect(() => {
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup",   onMouseUp);
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend",  onTouchEnd);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup",   onMouseUp);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend",  onTouchEnd);
+    };
+  }, [onMouseMove, onMouseUp, onTouchMove, onTouchEnd]);
+
+  const handleButtonClick = () => {
+    // Only toggle if it was a click, not end of a drag
+    if (!hasDragged.current) {
+      setIsOpen((v) => !v);
+    }
+  };
+
+  // ── Chat window position (opens above/left of button) ──
+  const chatStyle = {
+    bottom: `${position.y + 64}px`,  // 64 = button height + gap
+    right:  `${position.x}px`,
+    width:  "360px",
+    height: "500px",
+    maxWidth:  "calc(100vw - 32px)",
+    maxHeight: "calc(100vh - 110px)",
+  };
 
   const sendMessage = async (text) => {
     const trimmed = (text || input).trim();
@@ -212,11 +316,15 @@ const ChatbotWidget = () => {
         <BookMeetingModal faculty={bookingFaculty} onClose={() => setBookingFaculty(null)} />
       )}
 
-      {/* Floating button */}
+      {/* Floating draggable button */}
       <button
-        onClick={() => setIsOpen((v) => !v)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-blue-700 hover:bg-blue-800 text-white rounded-full shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-105"
-        title="ChitkaraBot"
+        ref={buttonRef}
+        onMouseDown={onMouseDown}
+        onTouchStart={onTouchStart}
+        onClick={handleButtonClick}
+        className="fixed z-50 w-14 h-14 bg-blue-700 hover:bg-blue-800 text-white rounded-full shadow-2xl flex items-center justify-center transition-colors duration-200 cursor-grab active:cursor-grabbing select-none"
+        style={{ bottom: `${position.y}px`, right: `${position.x}px` }}
+        title="ChitkaraBot — drag to move"
       >
         {isOpen ? <span className="text-lg font-bold">✕</span> : <span className="text-2xl">🤖</span>}
         {hasNewMessage && !isOpen && (
@@ -224,18 +332,11 @@ const ChatbotWidget = () => {
         )}
       </button>
 
-      {/* Chat window — fixed size, never overflows screen */}
+      {/* Chat window */}
       {isOpen && (
         <div
           className="fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden"
-          style={{
-            bottom: "88px",
-            right: "24px",
-            width: "360px",
-            height: "500px",
-            maxWidth: "calc(100vw - 32px)",
-            maxHeight: "calc(100vh - 110px)",
-          }}
+          style={chatStyle}
         >
           {/* Header */}
           <div className="flex-shrink-0 bg-blue-700 px-4 py-3 flex items-center gap-3">
@@ -254,7 +355,7 @@ const ChatbotWidget = () => {
             </button>
           </div>
 
-          {/* Messages — scrollable middle section */}
+          {/* Messages */}
           <div
             className="flex-1 overflow-y-auto px-3 py-3 bg-gray-50"
             style={{ minHeight: 0 }}
@@ -285,7 +386,7 @@ const ChatbotWidget = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input — always pinned to bottom */}
+          {/* Input */}
           <div className="flex-shrink-0 px-3 py-2.5 border-t border-gray-100 bg-white">
             <div className="flex items-center gap-2">
               <input

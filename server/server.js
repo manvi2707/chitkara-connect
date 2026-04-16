@@ -25,7 +25,10 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "https://chitkara-connect.netlify.app",
+    origin: [
+      "http://localhost:3000",
+      process.env.CLIENT_URL
+    ],
     methods: ["GET", "POST"],
   },
 });
@@ -103,8 +106,19 @@ io.on("connection", (socket) => {
   });
 });
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  process.env.CLIENT_URL
+];
+
 app.use(cors({
-  origin: "https://chitkara-connect.netlify.app",
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -119,6 +133,7 @@ app.use("/api/chatbot",      chatbotRoutes);
 app.use("/api/student",      studentRoutes);
 
 app.get("/", (req, res) => res.json({ message: "ChitkaraConnect API running 🚀" }));
+console.log("API URL:", process.env.REACT_APP_API_URL);
 
 const PORT = process.env.PORT || 5000;
 
