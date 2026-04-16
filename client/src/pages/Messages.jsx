@@ -160,7 +160,7 @@ const MessageBubble = ({ msg, isOwn }) => (
 );
 
 // ── Main Messages Page ────────────────────────
-const Messages = ({ onUnreadChange }) => {
+const Messages = ({ onUnreadChange, initialConversationId }) => {
   const { user } = useAuth();
 
   const [conversations,    setConversations]    = useState([]);
@@ -181,6 +181,19 @@ const Messages = ({ onUnreadChange }) => {
 
   // Keep ref in sync with state
   useEffect(() => { activeConvoRef.current = activeConvo; }, [activeConvo]);
+
+  // ── Auto-open conversation from Faculty Directory ──
+  // When student clicks "Message" on a FacultyCard, StudentDashboard
+  // switches to this tab AND passes the conversationId. We wait until
+  // conversations have loaded, then open the right thread automatically.
+  useEffect(() => {
+  if (!initialConversationId || conversations.length === 0) return;
+  const target = conversations.find((c) => c._id === initialConversationId);
+  if (target) {
+    openThread(target);
+    setShowMobileThread(true);
+  }
+}, [initialConversationId, conversations]);
 
   // ── Scroll on new messages ───────────────────
   useEffect(() => {

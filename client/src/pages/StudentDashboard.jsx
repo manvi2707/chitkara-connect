@@ -1,6 +1,7 @@
 // =============================================
-// pages/StudentDashboard.jsx — With Chatbot
+// pages/StudentDashboard.jsx
 // =============================================
+// Updated: Added Settings tab with delete account
 
 import { useState, useCallback } from "react";
 import Sidebar from "../components/Sidebar";
@@ -8,15 +9,23 @@ import FacultyDirectory from "./FacultyDirectory";
 import Meetings from "./Meetings";
 import Messages from "./Messages";
 import CollegeMap from "./CollegeMap";
-import ChatbotWidget from "../components/ChatbotWidget"; // ← NEW
+import StudentSettings from "./StudentSettings";   // ← NEW
+import ChatbotWidget from "../components/ChatbotWidget";
 
 const StudentDashboard = () => {
   const [activeTab,      setActiveTab]      = useState("directory");
-  const [msgUnreadCount, setMsgUnreadCount] = useState(0);
+  const [msgUnreadCount,       setMsgUnreadCount]       = useState(0);
+  const [selectedConversationId, setSelectedConversationId] = useState(null);
 
   const isMessages = activeTab === "messages";
 
-  // Called by Messages component whenever unread count changes
+  // Called by FacultyCard when student clicks "Message" — switches to Messages tab
+  // and pre-selects the conversation with that faculty
+  const handleOpenMessages = (conversationId) => {
+    setSelectedConversationId(conversationId);
+    setActiveTab("messages");
+  };
+
   const handleUnreadChange = useCallback((count) => {
     setMsgUnreadCount(count);
   }, []);
@@ -26,14 +35,16 @@ const StudentDashboard = () => {
     { id: "meetings",  label: "📅 My Meetings",        shortLabel: "Meetings" },
     { id: "messages",  label: "✉️ Messages",            shortLabel: "Messages", badge: msgUnreadCount },
     { id: "map",       label: "🗺️ Campus Info",         shortLabel: "Campus" },
+    { id: "settings",  label: "⚙️ Settings",            shortLabel: "Settings" }, // ← NEW
   ];
 
   const renderContent = () => {
     switch (activeTab) {
-      case "directory": return <FacultyDirectory />;
+      case "directory": return <FacultyDirectory onOpenMessages={handleOpenMessages} />;
       case "meetings":  return <Meetings role="student" />;
-      case "messages":  return <Messages onUnreadChange={handleUnreadChange} />;
+      case "messages":  return <Messages onUnreadChange={handleUnreadChange} initialConversationId={selectedConversationId} />;
       case "map":       return <CollegeMap />;
+      case "settings":  return <StudentSettings />;   // ← NEW
       default:          return <FacultyDirectory />;
     }
   };
@@ -49,7 +60,7 @@ const StudentDashboard = () => {
         {!isMessages && <div className="md:hidden h-20 flex-shrink-0" />}
       </main>
 
-      {/* ── AI Chatbot — only on student portal ── */}
+      {/* AI Chatbot — only on student portal */}
       <ChatbotWidget />
     </div>
   );

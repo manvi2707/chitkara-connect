@@ -17,7 +17,8 @@ const meetingRoutes      = require("./routes/meetingRoutes");
 const messageRoutes      = require("./routes/messageRoutes");
 const uploadRoutes       = require("./routes/uploadRoutes");
 const availabilityRoutes = require("./routes/availabilityRoutes");
-const chatbotRoutes      = require("./routes/chatbotRoutes"); // ← NEW
+const chatbotRoutes      = require("./routes/chatbotRoutes");
+const studentRoutes      = require("./routes/studentRoutes");
 
 const app    = express();
 const server = http.createServer(app);
@@ -111,7 +112,8 @@ app.use("/api/meetings",     meetingRoutes);
 app.use("/api/messages",     messageRoutes);
 app.use("/api/upload",       uploadRoutes);
 app.use("/api/availability", availabilityRoutes);
-app.use("/api/chatbot",      chatbotRoutes); // ← NEW
+app.use("/api/chatbot",      chatbotRoutes);
+app.use("/api/student",      studentRoutes);
 
 app.get("/", (req, res) => res.json({ message: "ChitkaraConnect API running 🚀" }));
 

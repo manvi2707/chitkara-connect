@@ -51,10 +51,20 @@ export const replyToMessage  = (id, data) => API.post(`/messages/${id}/reply`, d
 export const markMessageRead = (id)       => API.put(`/messages/${id}/read`);
 
 // ── Photo Upload ─────────────────────────────
+// ── Account Deletion ─────────────────────────
+export const deleteAccount = (data) => API.delete("/auth/delete-account", { data });
+
+// ── Photo Upload ─────────────────────────────
 export const deletePhoto = () => API.delete("/upload/photo");
 
 // ── Availability ─────────────────────────────
 export const getAvailableSlots = (facultyId, date) =>
   API.get(`/availability/${facultyId}?date=${date}`);
 
+// ── Student Profile ───────────────────────────
+export const getStudentProfile    = ()     => API.get("/student/profile");
+export const updateStudentProfile = (data) => API.put("/student/profile", data);
+
+// ── Change Password ───────────────────────────
+export const changePassword = (data) => API.put("/auth/change-password", data);
 export default API;

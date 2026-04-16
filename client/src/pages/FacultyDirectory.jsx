@@ -8,7 +8,7 @@ import FacultyCard from "../components/FacultyCard";
 import { DirectorySkeleton } from "../components/LoadingSkeleton";
 import { useToast } from "../components/Toast";
 
-const FacultyDirectory = () => {
+const FacultyDirectory = ({ onOpenMessages }) => {
   const [faculty, setFaculty]         = useState([]);
   const [search, setSearch]           = useState("");
   const [filterDept, setFilterDept]   = useState("All");
@@ -114,7 +114,7 @@ const FacultyDirectory = () => {
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((f) => (
-            <FacultyCard key={f._id} faculty={f} />
+            <FacultyCard key={f._id} faculty={f} onOpenMessages={onOpenMessages} />
           ))}
         </div>
       ) : (
