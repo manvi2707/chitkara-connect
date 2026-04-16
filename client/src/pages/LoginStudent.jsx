@@ -8,6 +8,14 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/Toast";
 import { studentLogin, studentRegister } from "../utils/api";
 
+const { user } = useAuth();
+
+useEffect(() => {
+  if (user?.role === "student") {
+    navigate("/student/dashboard", { replace: true });
+  }
+}, [user]);
+
 const LoginStudent = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -40,7 +48,7 @@ const LoginStudent = () => {
         isRegister ? "Account created!" : "Welcome back!",
         `Hello, ${response.data.user.name}!`
       );
-      navigate("/student/dashboard");
+      navigate("/student/dashboard", { replace: true });
     } catch (err) {
       toast.error(
         "Login failed",

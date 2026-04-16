@@ -8,6 +8,13 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/Toast";
 import { facultyLogin, facultyRegister } from "../utils/api";
 
+const { user } = useAuth();
+useEffect(() => {
+  if (user?.role === "faculty") {
+    navigate("/faculty/dashboard", { replace: true });
+  }
+}, [user]);
+
 const LoginFaculty = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -40,7 +47,7 @@ const LoginFaculty = () => {
         isRegister ? "Account created!" : "Welcome back!",
         `Hello, ${response.data.user.name}!`
       );
-      navigate("/faculty/dashboard");
+      navigate("/faculty/dashboard", { replace: true });
     } catch (err) {
       toast.error(
         "Login failed",
