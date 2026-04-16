@@ -20,12 +20,14 @@
 node_modules/
 client/node_modules/
 server/node_modules/
+server/.env
 
 # ── React Build Output ───────────────────────
 # Generated when you run: npm run build
 # Not needed in the repo
 client/build/
 client/.cache/
+client/.env
 
 # ── Logs ─────────────────────────────────────
 logs/
