@@ -152,7 +152,7 @@ const sendMeetingRequestEmail = async ({ faculty, student, meeting }) => {
     </p>
 
     <div style="text-align:center;">
-      <a href="${process.env.CLIENT_URL || "http://localhost:3000"}/faculty/dashboard"
+      <a href="${process.env.CLIENT_URL}/faculty/dashboard"
          style="display:inline-block; background:#1d4ed8; color:#ffffff; text-decoration:none;
                 padding:12px 28px; border-radius:10px; font-weight:700; font-size:14px;">
         View Request →
@@ -236,7 +236,7 @@ const sendMeetingAcceptedEmail = async ({ faculty, student, meeting }) => {
     </p>
 
     <div style="text-align:center;">
-      <a href="${process.env.CLIENT_URL || "http://localhost:3000"}/student/dashboard"
+      <a href="${process.env.CLIENT_URL}/student/dashboard"
          style="display:inline-block; background:#059669; color:#ffffff; text-decoration:none;
                 padding:12px 28px; border-radius:10px; font-weight:700; font-size:14px;">
         View My Meetings →
@@ -295,7 +295,7 @@ const sendMeetingRejectedEmail = async ({ faculty, student, meeting }) => {
     </p>
 
     <div style="text-align:center;">
-      <a href="${process.env.CLIENT_URL || "http://localhost:3000"}/student/dashboard"
+      <a href="${process.env.CLIENT_URL}/student/dashboard"
          style="display:inline-block; background:#1d4ed8; color:#ffffff; text-decoration:none;
                 padding:12px 28px; border-radius:10px; font-weight:700; font-size:14px;">
         Book Another Slot →

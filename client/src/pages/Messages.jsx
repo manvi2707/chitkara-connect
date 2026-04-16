@@ -19,7 +19,7 @@ import UserAvatar from "../components/UserAvatar";
 let socket;
 const getSocket = () => {
   if (!socket) {
-    socket = io(process.env.REACT_APP_SOCKET_URL || "http://localhost:5000", {
+    socket = io(process.env.REACT_APP_SOCKET_URL, {
       transports: ["websocket"],
     });
   }
