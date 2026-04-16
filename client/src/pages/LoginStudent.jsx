@@ -8,13 +8,6 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/Toast";
 import { studentLogin, studentRegister } from "../utils/api";
 
-const { user } = useAuth();
-
-useEffect(() => {
-  if (user?.role === "student") {
-    navigate("/student/dashboard", { replace: true });
-  }
-}, [user]);
 
 const LoginStudent = () => {
   const { login } = useAuth();
