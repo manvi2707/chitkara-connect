@@ -19,7 +19,7 @@ import UserAvatar from "../components/UserAvatar";
 let socket;
 const getSocket = () => {
   if (!socket) {
-    socket = io(process.env.REACT_APP_SOCKET_URL, {
+    socket = io(process.env.REACT_APP_SOCKET_URL || "http://localhost:5000", {
       transports: ["websocket"],
     });
   }
@@ -160,7 +160,7 @@ const MessageBubble = ({ msg, isOwn }) => (
 );
 
 // ── Main Messages Page ────────────────────────
-const Messages = ({ onUnreadChange, initialConversationId }) => {
+const Messages = ({ onUnreadChange }) => {
   const { user } = useAuth();
 
   const [conversations,    setConversations]    = useState([]);
@@ -181,19 +181,6 @@ const Messages = ({ onUnreadChange, initialConversationId }) => {
 
   // Keep ref in sync with state
   useEffect(() => { activeConvoRef.current = activeConvo; }, [activeConvo]);
-
-  // ── Auto-open conversation from Faculty Directory ──
-  // When student clicks "Message" on a FacultyCard, StudentDashboard
-  // switches to this tab AND passes the conversationId. We wait until
-  // conversations have loaded, then open the right thread automatically.
-  useEffect(() => {
-  if (!initialConversationId || conversations.length === 0) return;
-  const target = conversations.find((c) => c._id === initialConversationId);
-  if (target) {
-    openThread(target);
-    setShowMobileThread(true);
-  }
-}, [initialConversationId, conversations]);
 
   // ── Scroll on new messages ───────────────────
   useEffect(() => {
