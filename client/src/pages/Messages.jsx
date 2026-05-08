@@ -16,11 +16,16 @@ import { useAuth } from "../context/AuthContext";
 import UserAvatar from "../components/UserAvatar";
 
 // ── Socket singleton ─────────────────────────
+// FIX: Allow polling + websocket transports (required for Render)
+// FIX: Added reconnection so dropped connections self-heal
 let socket;
 const getSocket = () => {
-  if (!socket) {
+  if (!socket || socket.disconnected) {
     socket = io(process.env.REACT_APP_SOCKET_URL, {
-      transports: ["websocket"],
+      transports: ["polling", "websocket"], // polling first, then upgrades — required on Render
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
   }
   return socket;
@@ -120,7 +125,6 @@ const ConversationItem = ({ convo, isActive, onClick }) => {
 // ── MessageBubble ─────────────────────────────
 const MessageBubble = ({ msg, isOwn }) => (
   <div className={`flex items-end gap-1.5 mb-2 ${isOwn ? "flex-row-reverse" : "flex-row"}`}>
-    {/* Avatar — only for received messages, hidden on very small screens */}
     {!isOwn && (
       <div className="flex-shrink-0 self-end mb-1 hidden xs:block">
         <UserAvatar
@@ -133,7 +137,6 @@ const MessageBubble = ({ msg, isOwn }) => (
       </div>
     )}
 
-    {/* Bubble + meta */}
     <div
       className={`flex flex-col ${isOwn ? "items-end" : "items-start"}`}
       style={{ maxWidth: "75%", minWidth: 0 }}
@@ -213,7 +216,18 @@ const Messages = ({ onUnreadChange, initialConversationId }) => {
     if (!user) return;
     const s = getSocket();
     const myId = (user.id || user._id)?.toString();
-    s.emit("user:join", myId);
+
+    // FIX: Wait for connection before emitting user:join
+    // On mobile/Render, the socket may not be connected yet when this runs
+    const joinUser = () => {
+      s.emit("user:join", myId);
+    };
+
+    if (s.connected) {
+      joinUser();
+    } else {
+      s.once("connect", joinUser);
+    }
 
     s.on("message:received", (newMsg) => {
       const convoId = newMsg.conversation?._id || newMsg.conversation;
@@ -270,6 +284,7 @@ const Messages = ({ onUnreadChange, initialConversationId }) => {
     });
 
     return () => {
+      s.off("connect", joinUser);
       s.off("message:received");
       s.off("conversation:updated");
       s.off("message:delivered");
