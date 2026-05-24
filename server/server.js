@@ -27,6 +27,7 @@ const chatbotRoutes      = require("./routes/chatbotRoutes");
 
 const app    = express();
 const server = http.createServer(app);
+app.use("/api/student", studentRoutes);
 
 // ── CORS: allow Netlify URL + localhost ──────
 // Add your Netlify URL to SERVER .env as CLIENT_URL
