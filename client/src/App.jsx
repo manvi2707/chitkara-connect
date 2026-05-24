@@ -1,5 +1,5 @@
 // =============================================
-// App.jsx — Updated with Footer + Messages fix
+// App.jsx — Fixed mobile height + routes
 // =============================================
 
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
@@ -21,14 +21,21 @@ import NotFound from "./pages/NotFound";
 // ── All App Routes ───────────────────────────
 const AppRoutes = () => {
   const location = useLocation();
-  const isMessages = location.pathname === "/messages";
+  const isDashboard = location.pathname.includes("/dashboard");
+  const isMessages  = location.pathname === "/messages";
 
   return (
-    <div className="min-h-screen flex flex-col">
+    // FIX: Use 100dvh (dynamic viewport height) for correct mobile height
+    // 100vh on mobile includes the browser address bar, causing content to be cut off
+    <div className="flex flex-col" style={{ minHeight: "100dvh" }}>
       <Navbar />
 
-      {/* On Messages page: no scroll, fill height. Other pages: normal scroll. */}
-      <main className={`flex-1 ${isMessages ? "overflow-hidden flex flex-col" : ""}`}>
+      <main
+        className="flex-1 flex flex-col"
+        style={{
+          overflow: (isDashboard || isMessages) ? "hidden" : "auto",
+        }}
+      >
         <Routes>
           {/* Public routes */}
           <Route path="/"              element={<Home />} />
@@ -70,8 +77,7 @@ const AppRoutes = () => {
         </Routes>
       </main>
 
-      {/* Footer hides itself on dashboard/messages pages */}
-      {!isMessages && <Footer />}
+      {!isMessages && !isDashboard && <Footer />}
     </div>
   );
 };

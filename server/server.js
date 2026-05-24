@@ -1,6 +1,12 @@
 // =============================================
-// server/server.js — With receipts + onlineUsers exposed
+// server/server.js — Production-Ready Fix
 // =============================================
+// FIXES:
+// 1. CORS now allows multiple origins (Netlify + localhost)
+// 2. MongoDB connection options fixed (removed tlsAllowInvalidCertificates)
+// 3. Socket.io CORS matches express CORS
+// 4. Added /api/chatbot route (was missing!)
+// 5. Health check endpoint for Render keep-alive
 
 const express    = require("express");
 const mongoose   = require("mongoose");
@@ -17,15 +23,33 @@ const meetingRoutes      = require("./routes/meetingRoutes");
 const messageRoutes      = require("./routes/messageRoutes");
 const uploadRoutes       = require("./routes/uploadRoutes");
 const availabilityRoutes = require("./routes/availabilityRoutes");
+const chatbotRoutes      = require("./routes/chatbotRoutes");
 
 const app    = express();
 const server = http.createServer(app);
 
-const io = new Server(server, {
-  cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
-    methods: ["GET", "POST"],
+// ── CORS: allow Netlify URL + localhost ──────
+// Add your Netlify URL to SERVER .env as CLIENT_URL
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:3000",
+].filter(Boolean); // remove undefined/empty values
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (Postman, mobile apps, server-to-server)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked: ${origin}`));
+    }
   },
+  credentials: true,
+};
+
+const io = new Server(server, {
+  cors: corsOptions,
+  transports: ["websocket", "polling"], // FIX: allow polling fallback for mobile
 });
 
 // userId → socketId map — also exposed to controllers via app.get("onlineUsers")
@@ -40,24 +64,25 @@ io.on("connection", (socket) => {
 
   // User comes online
   socket.on("user:join", (userId) => {
+    if (!userId) return;
     onlineUsers.set(userId.toString(), socket.id);
     console.log(`👤 User ${userId} online`);
-
-    // Tell all their conversation partners they're online
     socket.broadcast.emit("user:online", { userId });
   });
 
   // User opens a conversation room
   socket.on("conversation:join", (conversationId) => {
-    socket.join(conversationId);
+    if (conversationId) socket.join(conversationId);
   });
 
   socket.on("conversation:leave", (conversationId) => {
-    socket.leave(conversationId);
+    if (conversationId) socket.leave(conversationId);
   });
 
   // Relay a sent message to the conversation room
   socket.on("message:send", (data) => {
+    if (!data?.conversationId || !data?.message) return;
+
     // Emit to everyone in the room (receiver sees it instantly)
     io.to(data.conversationId).emit("message:received", data.message);
 
@@ -83,12 +108,12 @@ io.on("connection", (socket) => {
 
   // Receiver opened a thread — mark all as read, notify sender
   socket.on("conversation:opened", ({ conversationId, readerId }) => {
-    // Find sender's socket and tell them their messages were read
-    // (We broadcast to the room — sender will pick it up)
-    socket.to(conversationId).emit("messages:read", {
-      conversationId,
-      readBy: readerId,
-    });
+    if (conversationId) {
+      socket.to(conversationId).emit("messages:read", {
+        conversationId,
+        readBy: readerId,
+      });
+    }
   });
 
   socket.on("disconnect", () => {
@@ -103,22 +128,28 @@ io.on("connection", (socket) => {
   });
 });
 
-app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:3000" }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
+// Routes
 app.use("/api/auth",         authRoutes);
 app.use("/api/faculty",      facultyRoutes);
 app.use("/api/meetings",     meetingRoutes);
 app.use("/api/messages",     messageRoutes);
 app.use("/api/upload",       uploadRoutes);
 app.use("/api/availability", availabilityRoutes);
+app.use("/api/chatbot",      chatbotRoutes);  // FIX: was missing!
 
-app.get("/", (req, res) => res.json({ message: "ChitkaraConnect API running 🚀" }));
+// Health check — Render pings this to keep server alive
+app.get("/", (req, res) => res.json({ message: "ChitkaraConnect API running 🚀", status: "ok" }));
+app.get("/health", (req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));
 
 const PORT = process.env.PORT || 5000;
 
+// FIX: Removed tlsAllowInvalidCertificates — it can cause random connection drops
+// MongoDB Atlas uses valid certificates; that option was causing auth token mismatches
 mongoose
-  .connect(process.env.MONGO_URI, { tls: true, tlsAllowInvalidCertificates: true })
+  .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB connected");
     server.listen(PORT, () => console.log(`🚀 Server on http://localhost:${PORT}`));

@@ -34,7 +34,7 @@ const FacultyDashboard = () => {
   };
 
   return (
-    <div className="flex overflow-hidden bg-gray-50" style={{ height: "calc(100vh - 64px)" }}>
+    <div className="flex overflow-hidden bg-gray-50" style={{ height: "calc(100dvh - 64px)" }}>
       <Sidebar tabs={TABS} activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className={`flex-1 flex flex-col min-w-0 ${isMessages ? "overflow-hidden" : "overflow-y-auto"}`}>
         <div className="md:hidden h-14 flex-shrink-0" />

@@ -1,5 +1,6 @@
 // =============================================
-// client/src/components/ChatbotWidget.jsx — DRAGGABLE
+// components/ChatbotWidget.jsx — FIXED
+// FIXES: "Gemini" label → "Groq/LLaMA", mobile layout improvements
 // =============================================
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -135,10 +136,10 @@ const ChatbotWidget = () => {
   const [hasNewMessage, setHasNewMessage]     = useState(false);
 
   // ── Drag state ───────────────────────────────
-  const [position, setPosition] = useState({ x: 24, y: 24 }); // distance from bottom-right
+  const [position, setPosition] = useState({ x: 24, y: 24 });
   const isDragging   = useRef(false);
   const dragOffset   = useRef({ x: 0, y: 0 });
-  const hasDragged   = useRef(false);           // to distinguish click vs drag
+  const hasDragged   = useRef(false);
   const buttonRef    = useRef(null);
 
   const messagesEndRef = useRef(null);
@@ -163,75 +164,53 @@ const ChatbotWidget = () => {
         }]);
       }
     }
-  }, [isOpen]);
+  }, [isOpen]); // eslint-disable-line
 
   // ── Drag handlers ────────────────────────────
   const onMouseDown = useCallback((e) => {
-    // Only drag on the button itself, not child elements like close button inside chat
     isDragging.current = true;
     hasDragged.current = false;
-
-    // Current button position from right/bottom edge
     const btnRect = buttonRef.current.getBoundingClientRect();
-    dragOffset.current = {
-      x: e.clientX - btnRect.left,
-      y: e.clientY - btnRect.top,
-    };
-
+    dragOffset.current = { x: e.clientX - btnRect.left, y: e.clientY - btnRect.top };
     e.preventDefault();
   }, []);
 
   const onMouseMove = useCallback((e) => {
     if (!isDragging.current) return;
     hasDragged.current = true;
-
-    const newX = window.innerWidth  - e.clientX + dragOffset.current.x - 56; // 56 = button width
+    const newX = window.innerWidth  - e.clientX + dragOffset.current.x - 56;
     const newY = window.innerHeight - e.clientY + dragOffset.current.y - 56;
-
-    // Clamp so button stays on screen
     setPosition({
       x: Math.max(8, Math.min(newX, window.innerWidth  - 64)),
       y: Math.max(8, Math.min(newY, window.innerHeight - 64)),
     });
   }, []);
 
-  const onMouseUp = useCallback(() => {
-    isDragging.current = false;
-  }, []);
+  const onMouseUp = useCallback(() => { isDragging.current = false; }, []);
 
-  // Touch support
   const onTouchStart = useCallback((e) => {
     const touch = e.touches[0];
     isDragging.current = true;
     hasDragged.current = false;
     const btnRect = buttonRef.current.getBoundingClientRect();
-    dragOffset.current = {
-      x: touch.clientX - btnRect.left,
-      y: touch.clientY - btnRect.top,
-    };
+    dragOffset.current = { x: touch.clientX - btnRect.left, y: touch.clientY - btnRect.top };
   }, []);
 
   const onTouchMove = useCallback((e) => {
     if (!isDragging.current) return;
     hasDragged.current = true;
     const touch = e.touches[0];
-
     const newX = window.innerWidth  - touch.clientX + dragOffset.current.x - 56;
     const newY = window.innerHeight - touch.clientY + dragOffset.current.y - 56;
-
     setPosition({
       x: Math.max(8, Math.min(newX, window.innerWidth  - 64)),
       y: Math.max(8, Math.min(newY, window.innerHeight - 64)),
     });
-
-    e.preventDefault(); // prevent page scroll while dragging
+    e.preventDefault();
   }, []);
 
-  const onTouchEnd = useCallback(() => {
-    isDragging.current = false;
-  }, []);
+  const onTouchEnd = useCallback(() => { isDragging.current = false; }, []);
 
-  // Attach global mouse/touch move+up listeners
   useEffect(() => {
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup",   onMouseUp);
@@ -246,21 +225,28 @@ const ChatbotWidget = () => {
   }, [onMouseMove, onMouseUp, onTouchMove, onTouchEnd]);
 
   const handleButtonClick = () => {
-    // Only toggle if it was a click, not end of a drag
-    if (!hasDragged.current) {
-      setIsOpen((v) => !v);
-    }
+    if (!hasDragged.current) setIsOpen((v) => !v);
   };
 
-  // ── Chat window position (opens above/left of button) ──
-  const chatStyle = {
-    bottom: `${position.y + 64}px`,  // 64 = button height + gap
-    right:  `${position.x}px`,
-    width:  "360px",
-    height: "500px",
-    maxWidth:  "calc(100vw - 32px)",
-    maxHeight: "calc(100vh - 110px)",
-  };
+  // FIX: on mobile, chat window fills screen
+  const isMobile = window.innerWidth < 640;
+  const chatStyle = isMobile
+    ? {
+        bottom: 0,
+        right: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        borderRadius: 0,
+      }
+    : {
+        bottom: `${position.y + 64}px`,
+        right:  `${position.x}px`,
+        width:  "360px",
+        height: "500px",
+        maxWidth:  "calc(100vw - 32px)",
+        maxHeight: "calc(100vh - 110px)",
+      };
 
   const sendMessage = async (text) => {
     const trimmed = (text || input).trim();
@@ -287,8 +273,10 @@ const ChatbotWidget = () => {
           facultyCards: data.type === "faculty_recommendation" ? (data.recommendedFaculty || []) : [],
         },
       ]);
+
+      if (!isOpen) setHasNewMessage(true);
     } catch (err) {
-      const errMsg = err.response?.data?.message || err.message || "Connection failed";
+      const errMsg = err.response?.data?.message || err.message || "Connection failed. Check if the server is running.";
       setMessages((prev) => [
         ...prev,
         {
@@ -304,10 +292,7 @@ const ChatbotWidget = () => {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
   return (
@@ -335,8 +320,8 @@ const ChatbotWidget = () => {
       {/* Chat window */}
       {isOpen && (
         <div
-          className="fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden"
-          style={chatStyle}
+          className="fixed z-50 bg-white shadow-2xl border border-gray-200 flex flex-col overflow-hidden"
+          style={{ ...chatStyle, borderRadius: isMobile ? 0 : "1rem" }}
         >
           {/* Header */}
           <div className="flex-shrink-0 bg-blue-700 px-4 py-3 flex items-center gap-3">
@@ -356,10 +341,7 @@ const ChatbotWidget = () => {
           </div>
 
           {/* Messages */}
-          <div
-            className="flex-1 overflow-y-auto px-3 py-3 bg-gray-50"
-            style={{ minHeight: 0 }}
-          >
+          <div className="flex-1 overflow-y-auto px-3 py-3 bg-gray-50" style={{ minHeight: 0 }}>
             {messages.map((msg) => (
               <MessageBubble key={msg.id} msg={msg} onBookMeeting={setBookingFaculty} />
             ))}
@@ -413,7 +395,8 @@ const ChatbotWidget = () => {
                 )}
               </button>
             </div>
-            <p className="text-xs text-gray-400 mt-1 text-center">Powered by Gemini AI</p>
+            {/* FIX: Corrected "Gemini AI" → "Groq / LLaMA 3" */}
+            <p className="text-xs text-gray-400 mt-1 text-center">Powered by Groq / LLaMA 3</p>
           </div>
         </div>
       )}

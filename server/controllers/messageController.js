@@ -1,23 +1,33 @@
 // =============================================
 // server/controllers/messageController.js
-// With delivery + read receipts
+// FIXED: conversation lookup bug, delivery receipts
 // =============================================
 
 const Message      = require("../models/Message");
 const Conversation = require("../models/Conversation");
 
 // ── Helper: find or create conversation ──────
+// FIX: previous query used $all on nested field which is unreliable
+// New query: find conversation where BOTH user IDs appear in participants array
 const findOrCreateConversation = async (userA, userAModel, userB, userBModel) => {
+  // Find conversation containing both userA and userB as participants
   let conversation = await Conversation.findOne({
-    "participants.user": { $all: [userA, userB] },
+    $and: [
+      { "participants.user": userA },
+      { "participants.user": userB },
+    ],
   });
+
   if (!conversation) {
     conversation = await Conversation.create({
       participants: [
         { user: userA, userModel: userAModel },
         { user: userB, userModel: userBModel },
       ],
-      unreadCount: { [userA]: 0, [userB]: 0 },
+      unreadCount: new Map([
+        [userA.toString(), 0],
+        [userB.toString(), 0],
+      ]),
     });
   }
   return conversation;
@@ -34,14 +44,13 @@ const getConversations = async (req, res) => {
       .populate("lastMessage")
       .sort({ updatedAt: -1 });
 
-    // Mark all messages as delivered for this user
-    // (they're online — anything sent to them counts as delivered)
+    // Mark messages as delivered for this user (they're now online)
     await Message.updateMany(
       { receiver: userId, isDelivered: false },
       { isDelivered: true }
     );
 
-    // Notify senders via socket that their messages were delivered
+    // Notify senders via socket that messages delivered
     const io = req.app.get("io");
     const onlineUsers = req.app.get("onlineUsers");
     if (io && onlineUsers) {
@@ -49,7 +58,6 @@ const getConversations = async (req, res) => {
         { receiver: userId, isDelivered: true, isReadByReceiver: false },
         "sender conversation"
       );
-      // Group by sender and notify each
       const senderIds = [...new Set(deliveredMsgs.map(m => m.sender.toString()))];
       senderIds.forEach(senderId => {
         const socketId = onlineUsers.get(senderId);
@@ -61,26 +69,40 @@ const getConversations = async (req, res) => {
 
     const populated = await Promise.all(
       conversations.map(async (convo) => {
-        const other = convo.participants.find(
-          (p) => p.user.toString() !== userId
-        );
-        const OtherModel = require(`../models/${other.userModel}`);
-        const otherUser  = await OtherModel.findById(other.user).select(
-          "name email profilePhoto department"
-        );
-        const unread = convo.unreadCount?.get?.(userId) || 0;
-        return {
-          _id:       convo._id,
-          updatedAt: convo.updatedAt,
-          otherUser: { ...otherUser.toObject(), role: other.userModel.toLowerCase() },
-          lastMessage: convo.lastMessage,
-          unreadCount: unread,
-        };
+        try {
+          const other = convo.participants.find(
+            (p) => p.user.toString() !== userId
+          );
+          if (!other) return null;
+
+          const OtherModel = require(`../models/${other.userModel}`);
+          const otherUser  = await OtherModel.findById(other.user).select(
+            "name email profilePhoto department"
+          );
+          if (!otherUser) return null;
+
+          // FIX: unreadCount is a Map — use .get() safely
+          const unread = convo.unreadCount instanceof Map
+            ? (convo.unreadCount.get(userId.toString()) || 0)
+            : (convo.unreadCount?.[userId] || 0);
+
+          return {
+            _id:       convo._id,
+            updatedAt: convo.updatedAt,
+            otherUser: { ...otherUser.toObject(), role: other.userModel.toLowerCase() },
+            lastMessage: convo.lastMessage,
+            unreadCount: unread,
+          };
+        } catch (err) {
+          console.error("Error populating conversation:", err.message);
+          return null;
+        }
       })
     );
 
-    res.json(populated);
+    res.json(populated.filter(Boolean)); // remove nulls
   } catch (error) {
+    console.error("getConversations error:", error);
     res.status(500).json({ message: "Server error: " + error.message });
   }
 };
@@ -108,14 +130,19 @@ const getMessages = async (req, res) => {
     );
 
     // Reset unread count
-    convo.unreadCount.set(userId.toString(), 0);
+    if (convo.unreadCount instanceof Map) {
+      convo.unreadCount.set(userId.toString(), 0);
+    } else {
+      convo.unreadCount = convo.unreadCount || {};
+      convo.unreadCount[userId] = 0;
+    }
+    convo.markModified("unreadCount");
     await convo.save();
 
     // Notify the sender via socket that messages were read
     const io = req.app.get("io");
     const onlineUsers = req.app.get("onlineUsers");
     if (io && onlineUsers) {
-      // Find the other participant (the sender)
       const other = convo.participants.find(p => p.user.toString() !== userId);
       if (other) {
         const senderSocketId = onlineUsers.get(other.user.toString());
@@ -130,6 +157,7 @@ const getMessages = async (req, res) => {
 
     res.json(messages);
   } catch (error) {
+    console.error("getMessages error:", error);
     res.status(500).json({ message: "Server error: " + error.message });
   }
 };
@@ -138,6 +166,11 @@ const getMessages = async (req, res) => {
 const sendMessage = async (req, res) => {
   try {
     const { receiverId, receiverModel, body, subject } = req.body;
+
+    if (!receiverId || !receiverModel || !body?.trim()) {
+      return res.status(400).json({ message: "receiverId, receiverModel, and body are required." });
+    }
+
     const senderModel = req.user.role === "student" ? "Student" : "Faculty";
     const senderId    = req.user.id;
 
@@ -145,7 +178,7 @@ const sendMessage = async (req, res) => {
       senderId, senderModel, receiverId, receiverModel
     );
 
-    // Check if receiver is currently online — if so, mark delivered immediately
+    // Check if receiver is currently online
     const onlineUsers = req.app.get("onlineUsers");
     const isReceiverOnline = onlineUsers?.has(receiverId.toString());
 
@@ -155,17 +188,23 @@ const sendMessage = async (req, res) => {
       senderModel,
       receiver:        receiverId,
       receiverModel,
-      body,
+      body:            body.trim(),
       subject:         subject || "",
-      isDelivered:     isReceiverOnline, // delivered immediately if online
+      isDelivered:     isReceiverOnline,
       isReadByReceiver: false,
     });
 
     await message.populate("sender", "name profilePhoto");
 
-    // Update conversation
-    const currentUnread = conversation.unreadCount?.get?.(receiverId.toString()) || 0;
-    conversation.unreadCount.set(receiverId.toString(), currentUnread + 1);
+    // Update conversation unread count
+    const currentUnread = conversation.unreadCount instanceof Map
+      ? (conversation.unreadCount.get(receiverId.toString()) || 0)
+      : (conversation.unreadCount?.[receiverId] || 0);
+
+    if (conversation.unreadCount instanceof Map) {
+      conversation.unreadCount.set(receiverId.toString(), currentUnread + 1);
+    }
+    conversation.markModified("unreadCount");
     conversation.lastMessage = message._id;
     await conversation.save();
 
@@ -175,6 +214,7 @@ const sendMessage = async (req, res) => {
       conversationId: conversation._id,
     });
   } catch (error) {
+    console.error("sendMessage error:", error);
     res.status(500).json({ message: "Server error: " + error.message });
   }
 };
@@ -183,18 +223,22 @@ const sendMessage = async (req, res) => {
 const getOrCreateConversation = async (req, res) => {
   try {
     const { otherUserId, otherUserModel } = req.body;
+    if (!otherUserId || !otherUserModel) {
+      return res.status(400).json({ message: "otherUserId and otherUserModel are required." });
+    }
     const senderModel = req.user.role === "student" ? "Student" : "Faculty";
     const conversation = await findOrCreateConversation(
       req.user.id, senderModel, otherUserId, otherUserModel
     );
     res.json({ conversationId: conversation._id });
   } catch (error) {
+    console.error("getOrCreateConversation error:", error);
     res.status(500).json({ message: "Server error: " + error.message });
   }
 };
 
 // ── BACKWARDS COMPAT ─────────────────────────
-const getInbox      = getConversations;
+const getInbox = getConversations;
 
 const replyToMessage = async (req, res) => {
   const parent = await Message.findById(req.params.messageId);
