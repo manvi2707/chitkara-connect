@@ -310,8 +310,7 @@ const Messages = ({ onUnreadChange, initialConversationId }) => {
       const target = conversations.find(c => c._id === initialConversationId);
       if (target) openThread(target);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialConversationId, conversations]);
+  }, [initialConversationId]); // eslint-disable-line
 
   // ── Fetch faculty for new chat ────────────────
   useEffect(() => {
