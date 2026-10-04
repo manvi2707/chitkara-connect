@@ -17,6 +17,11 @@ const { Server } = require("socket.io");
 
 dotenv.config();
 
+  if (!process.env.JWT_SECRET || !process.env.MONGO_URI) {
+    console.error("Missing JWT_SECRET or MONGO_URI");
+    process.exit(1);
+  }
+
 const authRoutes         = require("./routes/authRoutes");
 const facultyRoutes      = require("./routes/facultyRoutes");
 const meetingRoutes      = require("./routes/meetingRoutes");
@@ -24,17 +29,17 @@ const messageRoutes      = require("./routes/messageRoutes");
 const uploadRoutes       = require("./routes/uploadRoutes");
 const availabilityRoutes = require("./routes/availabilityRoutes");
 const chatbotRoutes      = require("./routes/chatbotRoutes");
+const studentRoutes = require("./routes/studentRoutes");
 
 const app    = express();
 const server = http.createServer(app);
-app.use("/api/student", studentRoutes);
 
 // ── CORS: allow Netlify URL + localhost ──────
 // Add your Netlify URL to SERVER .env as CLIENT_URL
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  "http://localhost:3000",
-].filter(Boolean); // remove undefined/empty values
+  const allowedOrigins = [
+    process.env.CLIENT_URL?.replace(/\/$/, ""),
+    "http://localhost:3000",
+  ].filter(Boolean);
 
 const corsOptions = {
   origin: (origin, callback) => {
@@ -131,7 +136,7 @@ io.on("connection", (socket) => {
 
 app.use(cors(corsOptions));
 app.use(express.json());
-
+app.use("/api/student", studentRoutes);
 // Routes
 app.use("/api/auth",         authRoutes);
 app.use("/api/faculty",      facultyRoutes);
@@ -140,6 +145,12 @@ app.use("/api/messages",     messageRoutes);
 app.use("/api/upload",       uploadRoutes);
 app.use("/api/availability", availabilityRoutes);
 app.use("/api/chatbot",      chatbotRoutes);  // FIX: was missing!
+
+  app.use((err, req, res, next) => {
+    console.error(err.message);
+    res.status(err.status || 500).json({ message: err.message || "Server error" });
+  });
+  process.on("unhandledRejection", (e) => console.error("Unhandled:", e));
 
 // Health check — Render pings this to keep server alive
 app.get("/", (req, res) => res.json({ message: "ChitkaraConnect API running 🚀", status: "ok" }));

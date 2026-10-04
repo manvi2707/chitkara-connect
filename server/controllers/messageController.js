@@ -241,11 +241,17 @@ const getOrCreateConversation = async (req, res) => {
 const getInbox = getConversations;
 
 const replyToMessage = async (req, res) => {
-  const parent = await Message.findById(req.params.messageId);
-  if (!parent) return res.status(404).json({ message: "Message not found." });
-  req.body.receiverId    = parent.sender;
-  req.body.receiverModel = parent.senderModel;
-  return sendMessage(req, res);
+  try {
+    const parent = await Message.findOne({
+      _id: req.params.messageId, receiver: req.user.id,
+    });
+    if (!parent) return res.status(404).json({ message: "Message not found." });
+    req.body.receiverId    = parent.sender;
+    req.body.receiverModel = parent.senderModel;
+    return sendMessage(req, res);
+  } catch (e) {
+    res.status(500).json({ message: "Server error: " + e.message });
+  }
 };
 
 const markAsRead = async (req, res) => {
