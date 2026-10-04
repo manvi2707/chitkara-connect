@@ -68,7 +68,7 @@ A full-stack faculty-student portal for Chitkara University — built with React
 | Real-time   | Socket.io                           |
 | File Upload | Cloudinary + Multer                 |
 | AI          | Groq API (LLaMA 3.1 8B)            |
-| Deployment  | Render (backend) + Vercel (frontend)|
+| Deployment  | Render (backend) + Netlify (frontend)|
 
 ---
 
@@ -253,13 +253,17 @@ App runs at **http://localhost:3000**
 6. Add all environment variables from `.env`
 7. **Important**: Remove `tlsAllowInvalidCertificates: true` from `server.js`
 
-### Frontend → Vercel
-1. Create new project on [vercel.com](https://vercel.com)
-2. Set root to `/client`
-3. Add env variables:
+### Frontend → Netlify
+1. Create a new site on [netlify.com](https://netlify.com) → **Import from Git**
+2. Connect your GitHub repo and set:
+   - Base directory: `client`
+   - Build command: `npm run build`
+   - Publish directory: `client/build`
+3. Add environment variables (Site settings → Environment variables):
    - `REACT_APP_API_URL=https://your-render-app.onrender.com/api`
    - `REACT_APP_SOCKET_URL=https://your-render-app.onrender.com`
-4. Deploy!
+4. Add `client/public/_redirects` containing `/* /index.html 200` so React Router pages don't 404 on refresh
+5. Deploy!
 
 ---
 
