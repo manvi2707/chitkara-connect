@@ -43,8 +43,8 @@ const httpsPost = (url, body, extraHeaders = {}) =>
 
 // ── Call Groq API ────────────────────────────
 const callGroq = async (apiKey, prompt) => {
-  const body = {
-    model: "llama-3.1-8b-instant",
+const body = {
+  model: "openai/gpt-oss-20b",
     messages: [{ role: "user", content: prompt }],
     temperature: 0.7,
     max_tokens: 800,
@@ -86,7 +86,7 @@ const test = async (req, res) => {
       process.env.GROQ_API_KEY,
       "Say hello in one word"
     );
-    results.groq = `Working ✅ model: llama-3.1-8b-instant | reply: ${text.trim().substring(0, 60)}`;
+    results.groq = `Working ✅ model: openai/gpt-oss-20b | reply: ${text.trim().substring(0, 60)}`;
   } catch (err) {
     results.groq = `Failed ❌ — ${err.message}`;
   }
